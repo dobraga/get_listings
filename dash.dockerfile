@@ -6,9 +6,10 @@ RUN apt-get update -qq && apt-get -y --no-install-recommends install \
     --deps TRUE \
     shinydashboard \
     tidyverse \
-    leaflet 
+    leaflet \
+    glue
 
-COPY ./aluguel/dash.R /srv/shiny-server/scripts/
+COPY ./R/dash.R /srv/shiny-server/scripts/
 ADD data/output/ /srv/shiny-server/data/output/
 
 EXPOSE 3838

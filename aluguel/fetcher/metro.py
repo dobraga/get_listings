@@ -1,18 +1,15 @@
 import scrapy
 from scrapy.crawler import CrawlerProcess
-from os.path import join, abspath, dirname, exists
+from os.path import join, exists
 from os import remove
-
-dir_src = dirname(__file__)
-dir_project = abspath(join(dir_src, "..", ".."))
-dir_input = join(dir_project, "data", "input")
 
 
 class MetroSpyder(scrapy.Spider):
     name = "metro"
 
-    def __init__(self, **kwargs):
+    def __init__(self, conf):
         super().__init__()
+        self.conf = conf
         self.allowed_domains = ["pt.wikipedia.org", "tools.wmflabs.org"]
         self.start_urls = [
             "https://pt.wikipedia.org/wiki/Metr%C3%B4_do_Rio_de_Janeiro",
@@ -20,7 +17,7 @@ class MetroSpyder(scrapy.Spider):
         ]
 
     def run(self, settings=None):
-        file = join(dir_input, "metro.jsonlines")
+        file = join(self.conf["dir_input"], "metro.jsonlines")
 
         if exists(file):
             remove(file)

@@ -1,22 +1,11 @@
 title = "TOML configfile"
 
-uf = ["RJ", "SP"]
-
 [zap]
-    url = "https://www.zapimoveis.com.br/{tipo_contrato}/{tipo_propriedade}/{uf}+{cidade}+{zona}+{bairro}"
-
-    [zap.tipo_contrato]
-        aluguel = ["aluguel"]
-
-    [zap.tipo_propriedade]
-        apartamento = ["apartamentos"]
-
+    url = "https://www.zapimoveis.com.br"
+    tipo_contrato = ["Alugar", "Comprar", "Lançamentos"]
+    tipo_propriedade = ["Mostrar todos", "Apartamento", "Casa"]
 
 [vivareal]
-    url = "https://www.vivareal.com.br/{tipo_contrato}/{uf}/{cidade}/{zona}/{bairro}/{tipo_propriedade}"
-
-    [vivareal.tipo_contrato]
-        "aluguel" = ["aluguel"]
-
-    [vivareal.tipo_propriedade]
-        "apartamento" = ["apartamento_residencial"]
+    url = "https://www.vivareal.com.br/"
+    tipo_contrato = ["Alugar", "Comprar", "Imóveis Novos"]
+    tipo_propriedade = ["Mostrar todos", "Apartamento", "Casa"]

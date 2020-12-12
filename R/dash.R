@@ -7,11 +7,19 @@ df <- readr::read_csv(
   "../data/output/apartamentos.csv", 
   col_types = readr::cols()
 ) %>%
-  mutate(html = paste("<a href= '", url, "'>", title, "</a>",
-                      imagens %>% str_remove_all("\\[|\\]|\'|\"| ") %>% str_split(",") %>% sapply(., function(x) x[1]) %>%
-                        paste0("<img src='",.,"' width='300px' height='300px'>"),
-                      '<style> div.leaflet-popup-content {width:auto !important;}</style>',
-                      round(distance, 0), " metros de distância da estação ", estacao
+  mutate(
+    html = paste(
+      glue::glue(
+        "<a onclick=\"window.open('{url}');\" href='#'> {title} </a>",
+        url = url, title = title
+      ),
+
+      imagens %>% str_remove_all("\\[|\\]|\'|\"| ") %>% 
+          str_split(",") %>% sapply(., function(x) x[1]) %>%
+          paste0("<img src='",.,"' width='300px' height='300px'>"),
+
+      '<style> div.leaflet-popup-content {width:auto !important;}</style>',
+      round(distance, 0), "metros de distância da estação", estacao
     )
   )
 
@@ -32,11 +40,15 @@ quartos_max = max(df$quartos, na.rm = T)
 metragem_min <- min(df$metragem, na.rm = T)
 metragem_max <- max(df$metragem, na.rm = T)
 
+distance_min <- round(min(df$distance, na.rm = T), 0)
+distance_max <- round(max(df$distance, na.rm = T), 0)
+
 header <- dashboardHeader(title = "Aluguel")
 sidebar <- dashboardSidebar(
   sliderInput("preco", "Preço Total", min = preco_min, max = preco_max, value = c(preco_min, preco_max), step = 100),
   sliderInput("quartos", "Quantidade de Quartos", min = 1, max = quartos_max, value = c(1, quartos_max)),
-  sliderInput("metragem", "Metragem (m²)", min = metragem_min, max = metragem_max, value = c(metragem_min, metragem_max))
+  sliderInput("metragem", "Metragem (m²)", min = metragem_min, max = metragem_max, value = c(metragem_min, metragem_max)),
+  sliderInput("distance", "Distância Metro (m²)", min = distance_min, max = distance_max, value = c(distance_min, distance_max))
 )
 body <- dashboardBody(
   fluidPage(
@@ -52,14 +64,13 @@ ui <- dashboardPage(
   body = body
 )
 
-file <- 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Rlogo.png/274px-Rlogo.png'
-
 server <- function(input, output) {
   df_react <- reactive({
     df %>% filter(
       between(preco_total, input$preco[1], input$preco[2]),
       between(quartos, input$quartos[1], input$quartos[2]),
       between(metragem, input$metragem[1], input$metragem[2]),
+      between(distance, input$distance[1], input$distance[2]),
     )
   })
 

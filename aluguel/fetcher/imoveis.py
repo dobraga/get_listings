@@ -1,4 +1,5 @@
 from concurrent.futures import ProcessPoolExecutor
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome
 from pyvirtualdisplay import Display
@@ -13,24 +14,90 @@ class Imoveis:
     def __init__(self, conf, **kwargs):
         self.conf = conf
         self.dir_webdriver = conf["dir_webdriver"]
-
-        self.base_url = [
-            self.make_url(
-                site,
-                kwargs.get("tipo_contrato"),
-                kwargs.get("tipo_propriedade"),
-                kwargs.get("uf"),
-                kwargs.get("cidade"),
-                kwargs.get("zona"),
-                kwargs.get("bairro"),
-            )
-            for site in kwargs.get("site")
-        ]
         self.max_page = int(kwargs.get("max_page"))
         self.visible = kwargs.get("teste")
         self.output = kwargs.get("output") or join(conf["dir_input"], "imoveis.jsonlines")
+        
+        tipo_contrato = kwargs.get("tipo_contrato")
+        tipo_propriedade = kwargs.get("tipo_propriedade")
+        local = kwargs.get("local")
 
-        print("Arquivo gerado: "+self.output)
+        self.base_url = [
+            self.make_url(conf, site, tipo_contrato, tipo_propriedade, local) 
+            for site in kwargs.get("site")
+        ]
+
+        print("Páginas iniciais: ", self.base_url)
+
+    def make_url(self, conf, site, tipo_contrato, tipo_propriedade, local):
+        with Display(visible=self.visible, size=(1600, 1024)):
+            with Chrome(self.dir_webdriver) as driver:
+                driver.maximize_window()
+
+                site = conf[site]["url"]
+                get_with_retry(driver, site)
+                sleep(5)
+
+
+                # popup de cookies
+                iframe = get_if_exists(
+                    driver, '//iframe[@name="mtm-frame-prompt"]'
+                )
+
+                if iframe:
+                    driver.switch_to.frame(iframe)
+                    button = get_if_exists(driver, '//button[text()="Sim"]')
+                    if button:
+                        button.click()
+                    driver.switch_to.default_content()
+                    sleep(1)
+
+
+                # Seleciona o tipo de contrato
+                select_tipo_contrato = get_if_exists(
+                    driver, '//select[@class="js-select-business"]/option[contains(text(), "{}")]'.format(tipo_contrato)
+                ) or get_if_exists(
+                    driver, '//div[@class="business-filter__container"]/button[@title="{}"]'.format(tipo_contrato)
+                )
+
+                if select_tipo_contrato:
+                    select_tipo_contrato.click()
+
+
+                # Seleciona o tipo da propriedade
+                select_tipo_propriedade = get_if_exists(
+                    driver, '//select[@class="js-select-type"]//option[contains(text(), "{}")]'.format(tipo_propriedade)
+                ) or get_if_exists(
+                    driver, '//select[@class="l-select__item l-select__input"]//option[contains(text(), "{}")]'.format(tipo_propriedade)
+                )
+
+                if select_tipo_propriedade:
+                    select_tipo_propriedade.click()
+
+
+                # Seleciona o local
+                select_local = get_if_exists(
+                    driver, '//input[@id="filter-location-search-input"]'
+                ) or get_if_exists(
+                    driver, '//input[@class="typeahead__input js-typeahead-input"]'
+                )
+
+                if select_local:
+                    select_local.send_keys(local)
+                    sleep(3)
+                    select_local.send_keys(Keys.ENTER)
+
+
+                # Buscar
+                buscar = get_if_exists(
+                    driver, '//button[@class="hero-filters__cta js-filters-cta button button-primary button-primary--standard button--regular"]'
+                )
+
+                if buscar:
+                    buscar.click()
+
+                sleep(3)
+                return driver.current_url
 
 
     def run(self):
@@ -46,32 +113,7 @@ class Imoveis:
             print(f"Total de {len(imoveis)} imóveis")
 
             _ = exe.map(self.parse_imovel, imoveis)
-
-
-    def make_url(self, site, tipo_contrato, tipo_propriedade, uf, cidade, zona, bairro):
-        def format_string(string):
-            return "+".join(string.split()).lower()
-
-        def format(conf, tipo_contrato, tipo_propriedade, uf, cidade, zona, bairro):
-            tp = {
-                "tipo_contrato": conf["tipo_contrato"][tipo_contrato],
-                "tipo_propriedade": conf["tipo_propriedade"][tipo_propriedade],
-            }
-
-            f = {"uf": uf, "cidade": format_string(cidade), "zona": format_string(zona), "bairro": format_string(bairro)}
-
-            for key, value in tp.items():
-                for i, val in enumerate(value):
-                    new_key = key + str(i) if len(value) > 1 else key
-                    f[new_key] = val
-            return f
-
-        conf = self.conf[site]
-        url = conf["url"]
-        f = format(conf, tipo_contrato, tipo_propriedade, uf, cidade, zona, bairro)
-
-        return url.format_map(f)
-
+    
 
     @retry(tries=3)
     def get_paginas(self, base_url):
