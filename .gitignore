@@ -209,3 +209,5 @@ vignettes/*.pdf
 
 *.csv
 *.jsonlines
+*.npz
+*.pkl
