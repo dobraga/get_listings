@@ -206,3 +206,6 @@ vignettes/*.pdf
 .history
 
 # End of https://www.toptal.com/developers/gitignore/api/python,jupyternotebooks,r,visualstudiocode
+
+*.csv
+*.jsonlines
