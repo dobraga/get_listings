@@ -1,35 +1,32 @@
 import scrapy
 from scrapy.crawler import CrawlerProcess
-from os.path import join, exists
+from os.path import join, abspath, dirname, exists
 from os import remove
 
 
 class MetroSpyder(scrapy.Spider):
     name = "metro"
 
-    def __init__(self, conf):
+    def __init__(self, conf, **kwargs):
         super().__init__()
         self.conf = conf
         self.allowed_domains = ["pt.wikipedia.org", "tools.wmflabs.org"]
-        self.start_urls = [
-            "https://pt.wikipedia.org/wiki/Metr%C3%B4_do_Rio_de_Janeiro",
-            "https://pt.wikipedia.org/wiki/SuperVia",
-        ]
+        self.start_urls = conf["urls_metro_trem"]
+
+        self.file = join(conf["dir_input"], "metro.jsonlines")
 
     def run(self, settings=None):
-        file = join(self.conf["dir_input"], "metro.jsonlines")
-
-        if exists(file):
-            remove(file)
+        if exists(self.file):
+            remove(self.file)
 
         settings = settings or {
-            "FEEDS": {file: {"format": "jsonlines", "encoding": "utf8",},},
+            "FEEDS": {self.file: {"format": "jsonlines", "encoding": "utf8",},},
             "HTTPERROR_ALLOWED_CODES": [403],
             "LOG_LEVEL": "WARN",
         }
 
         crawler_process = CrawlerProcess(settings)
-        crawler_process.crawl(MetroSpyder)
+        crawler_process.crawl(MetroSpyder, conf=self.conf)
         crawler_process.start()
 
     def parse(self, response):

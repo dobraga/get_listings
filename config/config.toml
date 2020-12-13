@@ -1,11 +1,26 @@
-title = "TOML configfile"
+title = "ConfigFile"
+
+site = ["zap", "vivareal"]
+local = "Tijuca"
+max_page = 20
+teste = false
+
+urls_metro_trem = [
+    "https://pt.wikipedia.org/wiki/Metr%C3%B4_do_Rio_de_Janeiro",
+    "https://pt.wikipedia.org/wiki/SuperVia",
+]
 
 [zap]
     url = "https://www.zapimoveis.com.br"
-    tipo_contrato = ["Alugar", "Comprar", "Lançamentos"]
-    tipo_propriedade = ["Mostrar todos", "Apartamento", "Casa"]
+    tipo_contrato = "Alugar"
+    tipo_propriedade = "Apartamento"
 
 [vivareal]
     url = "https://www.vivareal.com.br/"
-    tipo_contrato = ["Alugar", "Comprar", "Imóveis Novos"]
-    tipo_propriedade = ["Mostrar todos", "Apartamento", "Casa"]
+    tipo_contrato = "Alugar"
+    tipo_propriedade = "Apartamento"
+
+[imovelweb]
+    url = "https://www.imovelweb.com.br/"
+    tipo_contrato = "Alugar"
+    tipo_propriedade = "Apartamento (Todos)"

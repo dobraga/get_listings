@@ -66,38 +66,38 @@ def preprocess(file="imoveis.jsonlines", json=None, file_metro="metro.jsonlines"
     if not json:
         df.to_csv(join(dir_output, "apartamentos.csv"), index=None)
 
-    tc = joblib.load(join(dir_objects, "ajusta_desc.pkl"))
-    oh = joblib.load(join(dir_objects, "onehot.pkl"))
-    tfidf = joblib.load(join(dir_objects, "tfidf.pkl"))
+    # tc = joblib.load(join(dir_objects, "ajusta_desc.pkl"))
+    # # oh = joblib.load(join(dir_objects, "onehot.pkl"))
+    # tfidf = joblib.load(join(dir_objects, "tfidf.pkl"))
 
-    df = df[
-        [
-            "metragem",
-            "quartos",
-            "banheiros",
-            "vagas",
-            "lat",
-            "lng",
-            "desc",
-            "linha",
-            "estacao",
-            "distance",
-        ]
-    ].dropna()
+    # df = df[
+    #     [
+    #         "metragem",
+    #         "quartos",
+    #         "banheiros",
+    #         "vagas",
+    #         "lat",
+    #         "lng",
+    #         "desc",
+    #         "linha",
+    #         "estacao",
+    #         "distance",
+    #     ]
+    # ].dropna()
 
-    def ordinal_encoder(df, oh):
-        X_encode = pd.DataFrame(oh.transform(df[["linha", "estacao"]]))
-        X_encode.columns = oh.get_feature_names(["fl", "fl"])
-        X_encode = X_encode.set_index(df.index)
-        X_encode = pd.concat([df.drop(columns=["linha", "estacao"]), X_encode], axis=1)
-        return X_encode
+    # def ordinal_encoder(df, oh):
+    #     X_encode = pd.DataFrame(oh.transform(df[["linha", "estacao"]]))
+    #     X_encode.columns = oh.get_feature_names(["fl", "fl"])
+    #     X_encode = X_encode.set_index(df.index)
+    #     X_encode = pd.concat([df.drop(columns=["linha", "estacao"]), X_encode], axis=1)
+    #     return X_encode
 
-    df = tc.transform(df)
-    df = ordinal_encoder(df, oh)
-    df = hstack([tfidf.transform(df.desc), df.drop(columns="desc")])
+    # df = tc.transform(df)
+    # # df = ordinal_encoder(df, oh)
+    # df = hstack([tfidf.transform(df.desc), df.drop(columns="desc")])
 
-    if not json:
-        save_npz(join(dir_output, "apartamentos.npz"), df)
+    # if not json:
+    #     save_npz(join(dir_output, "apartamentos.npz"), df)
 
     return df
 

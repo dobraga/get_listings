@@ -3,39 +3,45 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Chrome
 from pyvirtualdisplay import Display
-from os.path import join
+from os.path import join, exists
 from retry import retry
 from time import sleep
+from tqdm import tqdm
+import pandas as pd
 from .aux import *
 import jsonlines
 import re
 
+
+
 class Imoveis:
-    def __init__(self, conf, **kwargs):
+    def __init__(self, conf):
         self.conf = conf
         self.dir_webdriver = conf["dir_webdriver"]
-        self.max_page = int(kwargs.get("max_page"))
-        self.visible = kwargs.get("teste")
-        self.output = kwargs.get("output") or join(conf["dir_input"], "imoveis.jsonlines")
-        
-        tipo_contrato = kwargs.get("tipo_contrato")
-        tipo_propriedade = kwargs.get("tipo_propriedade")
-        local = kwargs.get("local")
+        self.max_page = int(conf["max_page"])
+        self.visible = conf["teste"]
+        self.output = conf.get("output") or join(conf["dir_input"], "imoveis.jsonlines")
+      
+        self.base_url = [self.make_url(conf, site) for site in conf["site"]]
 
-        self.base_url = [
-            self.make_url(conf, site, tipo_contrato, tipo_propriedade, local) 
-            for site in kwargs.get("site")
-        ]
+        if exists(self.output):
+            self.urls_extraidas = pd.read_json(self.output, lines=True).url.to_list()
+        else:
+            self.urls_extraidas = []
 
         print("Páginas iniciais: ", self.base_url)
 
-    def make_url(self, conf, site, tipo_contrato, tipo_propriedade, local):
+    def make_url(self, conf, site):
         with Display(visible=self.visible, size=(1600, 1024)):
             with Chrome(self.dir_webdriver) as driver:
                 driver.maximize_window()
 
-                site = conf[site]["url"]
-                get_with_retry(driver, site)
+                url = conf[site]["url"]
+                local = conf["local"]
+                tipo_contrato = conf[site]["tipo_contrato"]
+                tipo_propriedade = conf[site]["tipo_propriedade"]
+
+                get_with_retry(driver, url)
                 sleep(5)
 
 
@@ -58,6 +64,8 @@ class Imoveis:
                     driver, '//select[@class="js-select-business"]/option[contains(text(), "{}")]'.format(tipo_contrato)
                 ) or get_if_exists(
                     driver, '//div[@class="business-filter__container"]/button[@title="{}"]'.format(tipo_contrato)
+                ) or get_if_exists(
+                    driver, '//ul[@class="operation-type-menu"]//p[contains(text(), "{}")]'.format("Comprar")
                 )
 
                 if select_tipo_contrato:
@@ -65,10 +73,24 @@ class Imoveis:
 
 
                 # Seleciona o tipo da propriedade
+                seletor_tipo_propriedade = get_if_exists(
+                    driver, '//select[@class="js-select-type"]'
+                ) or get_if_exists(
+                    driver, '//select[@class="l-select__item l-select__input"]'
+                ) or get_if_exists(
+                    driver, '//div[@class="property-type-container"]'
+                )
+
+                if seletor_tipo_propriedade:
+                    seletor_tipo_propriedade.click()
+
+
                 select_tipo_propriedade = get_if_exists(
                     driver, '//select[@class="js-select-type"]//option[contains(text(), "{}")]'.format(tipo_propriedade)
                 ) or get_if_exists(
                     driver, '//select[@class="l-select__item l-select__input"]//option[contains(text(), "{}")]'.format(tipo_propriedade)
+                ) or get_if_exists(
+                    driver, '//div[@class="property-type-container"]//div[contains(text(), "{}")]'.format(tipo_propriedade)
                 )
 
                 if select_tipo_propriedade:
@@ -80,6 +102,8 @@ class Imoveis:
                     driver, '//input[@id="filter-location-search-input"]'
                 ) or get_if_exists(
                     driver, '//input[@class="typeahead__input js-typeahead-input"]'
+                ) or get_if_exists(
+                    driver, '//div[@class="search-box-container"]//input'
                 )
 
                 if select_local:
@@ -91,6 +115,8 @@ class Imoveis:
                 # Buscar
                 buscar = get_if_exists(
                     driver, '//button[@class="hero-filters__cta js-filters-cta button button-primary button-primary--standard button--regular"]'
+                ) or get_if_exists(
+                    driver, '//button[@data-qa="search-button"]'
                 )
 
                 if buscar:
@@ -104,15 +130,15 @@ class Imoveis:
         with ProcessPoolExecutor() as exe:            
             paginas = exe.map(self.get_paginas, self.base_url)
             paginas = flat(list(paginas))
-
-            print(f"Total de {len(paginas)} páginas")
+            print(f"Buscando um total de {len(paginas)} páginas")
 
             imoveis = exe.map(self.get_imoveis, paginas)
             imoveis = flat(list(imoveis))
+            imoveis = list(filter(lambda x: x not in self.urls_extraidas, imoveis))
 
-            print(f"Total de {len(imoveis)} imóveis")
+            print(f"Buscando um total de {len(imoveis)} imóveis")
 
-            _ = exe.map(self.parse_imovel, imoveis)
+            _ = tqdm(exe.map(self.parse_imovel, imoveis), total=len(imoveis))
     
 
     @retry(tries=3)
