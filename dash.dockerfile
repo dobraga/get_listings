@@ -9,8 +9,8 @@ RUN apt-get update -qq && apt-get -y --no-install-recommends install \
     leaflet \
     glue
 
-COPY ./R/dash.R /srv/shiny-server/scripts/
+COPY ./R/app.R /srv/shiny-server/scripts/
 ADD data/output/ /srv/shiny-server/data/output/
 
 EXPOSE 3838
-CMD ["R", "-e", "shiny::runApp('/srv/shiny-server/scripts/dash.R', port=3838, host='0.0.0.0')"]
+CMD ["R", "-e", "shiny::runApp('/srv/shiny-server/scripts/app.R', port=3838, host='0.0.0.0')"]

@@ -1,8 +1,15 @@
 version: '3.3'
 services:
     shiny:
-        build:
-            context: .
-            dockerfile: dash.dockerfile
-        ports: 
-            - "3838:3838"
+      build:
+        context: .
+        dockerfile: dash.dockerfile
+      ports:
+        - "3838:3838"
+
+    app:
+      build: 
+        context: .
+        dockerfile: app.dockerfile
+      ports: 
+          - "4040:4040"
