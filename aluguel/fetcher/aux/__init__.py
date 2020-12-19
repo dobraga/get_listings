@@ -1,12 +1,14 @@
 import re
 from retry import retry
 from timeout_decorator import timeout
-
+from time import sleep
 
 @retry(tries=10, logger=None)
 @timeout(5)
 def get_with_retry(driver, url):
     driver.get(url)
+    if "zap" in url:
+        sleep(3)
 
 
 def get(driver, xpath, to_int=False):

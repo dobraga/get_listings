@@ -7,6 +7,7 @@ from os.path import join, exists
 from retry import retry
 from time import sleep
 from tqdm import tqdm
+from math import ceil
 import pandas as pd
 from .aux import *
 import jsonlines
@@ -21,7 +22,7 @@ class Imoveis:
         self.max_page = int(conf["max_page"])
         self.visible = conf["teste"]
         self.output = conf.get("output") or join(conf["dir_input"], "imoveis.jsonlines")
-      
+        
         self.base_url = [self.make_url(conf, site) for site in conf["site"]]
 
         if exists(self.output):
@@ -31,6 +32,21 @@ class Imoveis:
 
         print("Páginas iniciais: ", self.base_url)
 
+
+    def run(self):
+        with ProcessPoolExecutor() as exe:
+            paginas = exe.map(self.get_paginas, self.base_url)
+            paginas = flat(list(paginas))
+            print(f"Buscando um total de {len(paginas)} páginas")
+
+            imoveis = tqdm(exe.map(self.get_imoveis, paginas), desc="Link dos Imóveis", total=len(paginas))
+            imoveis = flat(list(imoveis))
+            imoveis = list(filter(lambda x: x not in self.urls_extraidas, imoveis))
+            print(f"Buscando um total de {len(imoveis)} imóveis")
+
+            _ = tqdm(exe.map(self.parse_imovel, imoveis), desc="Info dos Imóveis")
+
+
     def make_url(self, conf, site):
         with Display(visible=self.visible, size=(1600, 1024)):
             with Chrome(self.dir_webdriver) as driver:
@@ -38,6 +54,8 @@ class Imoveis:
 
                 url = conf[site]["url"]
                 local = conf["local"]
+                valor_minimo = conf.get("valor_minimo")
+                valor_maximo = conf.get("valor_maximo")
                 tipo_contrato = conf[site]["tipo_contrato"]
                 tipo_propriedade = conf[site]["tipo_propriedade"]
 
@@ -56,45 +74,38 @@ class Imoveis:
                     if button:
                         button.click()
                     driver.switch_to.default_content()
-                    sleep(1)
+                    sleep(3)
 
 
                 # Seleciona o tipo de contrato
-                select_tipo_contrato = get_if_exists(
+                _ = get_if_exists(
                     driver, '//select[@class="js-select-business"]/option[contains(text(), "{}")]'.format(tipo_contrato)
                 ) or get_if_exists(
                     driver, '//div[@class="business-filter__container"]/button[@title="{}"]'.format(tipo_contrato)
                 ) or get_if_exists(
-                    driver, '//ul[@class="operation-type-menu"]//p[contains(text(), "{}")]'.format("Comprar")
+                    driver, '//ul[@class="operation-type-menu"]//p[contains(text(), "{}")]'.format(tipo_contrato)
                 )
-
-                if select_tipo_contrato:
-                    select_tipo_contrato.click()
+                _.click()
 
 
                 # Seleciona o tipo da propriedade
-                seletor_tipo_propriedade = get_if_exists(
+                _ = get_if_exists(
                     driver, '//select[@class="js-select-type"]'
                 ) or get_if_exists(
                     driver, '//select[@class="l-select__item l-select__input"]'
                 ) or get_if_exists(
                     driver, '//div[@class="property-type-container"]'
                 )
+                _.click()
 
-                if seletor_tipo_propriedade:
-                    seletor_tipo_propriedade.click()
-
-
-                select_tipo_propriedade = get_if_exists(
+                _ = get_if_exists(
                     driver, '//select[@class="js-select-type"]//option[contains(text(), "{}")]'.format(tipo_propriedade)
                 ) or get_if_exists(
                     driver, '//select[@class="l-select__item l-select__input"]//option[contains(text(), "{}")]'.format(tipo_propriedade)
                 ) or get_if_exists(
                     driver, '//div[@class="property-type-container"]//div[contains(text(), "{}")]'.format(tipo_propriedade)
                 )
-
-                if select_tipo_propriedade:
-                    select_tipo_propriedade.click()
+                _.click()
 
 
                 # Seleciona o local
@@ -106,10 +117,9 @@ class Imoveis:
                     driver, '//div[@class="search-box-container"]//input'
                 )
 
-                if select_local:
-                    select_local.send_keys(local)
-                    sleep(3)
-                    select_local.send_keys(Keys.ENTER)
+                select_local.send_keys(local)
+                sleep(3)
+                select_local.send_keys(Keys.ENTER)
 
 
                 # Buscar
@@ -123,56 +133,58 @@ class Imoveis:
                     buscar.click()
 
                 sleep(3)
+
+
+                # Define range de preco
+                preco = get_if_exists(
+                    driver, '//button[contains(@class, "js-price-toggle")]'
+                ) or get_if_exists(
+                    driver, '//div[contains(@class, "js-price-range")]'
+                )
+                if preco:
+                    preco.click()
+
+                    preco_min = get_if_exists(
+                        driver, '//input[contains(@class, "js-price-min")]'
+                    ) or get_if_exists(
+                        driver, '//input[@id="filter-range-from-price"]'
+                    )
+                    preco_min.send_keys(valor_minimo)
+
+                    preco_max = get_if_exists(
+                        driver, '//input[contains(@class, "js-price-max")]'
+                    ) or get_if_exists(
+                        driver, '//input[@id="filter-range-to-price"]'
+                    )
+                    preco_max.send_keys(valor_maximo)
+
+                    preco.click()
+
+                sleep(3)
                 return driver.current_url
 
 
-    def run(self):
-        with ProcessPoolExecutor() as exe:            
-            paginas = exe.map(self.get_paginas, self.base_url)
-            paginas = flat(list(paginas))
-            print(f"Buscando um total de {len(paginas)} páginas")
-
-            imoveis = exe.map(self.get_imoveis, paginas)
-            imoveis = flat(list(imoveis))
-            imoveis = list(filter(lambda x: x not in self.urls_extraidas, imoveis))
-
-            print(f"Buscando um total de {len(imoveis)} imóveis")
-
-            _ = tqdm(exe.map(self.parse_imovel, imoveis), total=len(imoveis))
-    
-
     @retry(tries=3)
     def get_paginas(self, base_url):
-        paginas = []
-        paginas.append(base_url)
-
         with Display(visible=self.visible, size=(1600, 1024)):
             with Chrome(self.dir_webdriver) as driver:
                 get_with_retry(driver, base_url)
 
-                while len(paginas) < self.max_page:
-                    proxima_pagina = driver.find_elements(
-                        By.XPATH, '//a[@title="Próxima página"]'
-                    ) or driver.find_elements(
-                        By.XPATH, '//button[@aria-label="Próxima Página"]'
-                    ) or driver.find_elements(
-                        By.XPATH, '//*[@id="react-paging"]/div/ul/li[6]/a'
-                    )
+                qtd_imoveis_total = get(driver, "//h1")
+                qtd_imoveis_total = parse_int(re.match("([^\s]+)", qtd_imoveis_total).group(), True)
 
-                    if proxima_pagina:
-                        u = driver.current_url
-                        while u == driver.current_url:
-                            try:
-                                proxima_pagina[0].click()
-                            except:
-                                sleep(0.5)
-                        sleep(1)
-                        paginas.append(driver.current_url)
+                qtd_imoveis_pagina = len(driver.find_elements(
+                    By.XPATH,
+                    '//div[@class="results-list js-results-list"]//a[@class="property-card__content-link js-card-title"]',
+                ) or driver.find_elements(By.XPATH, '//div[@class="card-container"]'))
 
-                    else:
-                        break
+                qtd_paginas = min(ceil(qtd_imoveis_total/qtd_imoveis_pagina), self.max_page)
 
-                return paginas
+                url_page = base_url + "&pagina={}"
+
+                paginas = [url_page.format(page) for page in range(1, qtd_paginas+1)]
+
+        return paginas
 
 
     @retry(tries=3)
@@ -180,7 +192,7 @@ class Imoveis:
         with Display(visible=self.visible, size=(1600, 1024)):
             with Chrome(self.dir_webdriver) as driver:
                 get_with_retry(driver, url)
-                sleep(1)
+                sleep(10)
 
                 botoes = driver.find_elements(
                     By.XPATH,
@@ -193,7 +205,6 @@ class Imoveis:
                     links = []
 
                 if not all(links):
-
                     def click_get_link(driver, xpath, idx):
                         tentativa = 1
                         u = driver.current_url
@@ -313,7 +324,7 @@ class Imoveis:
                     '//*[@id="mapDiv"]/div/div/div[8]/div/div/div/div[7]/div/a[contains(@href,"")]',
                     '//*[@id="mapDiv"]//div[@class="google-maps-link"]/a[contains(@href,"")]'
                 ]
-    
+
 
                 while not sucesso and tentativa <= 50:
                     if tentativa % 10 == 0:
@@ -379,4 +390,3 @@ class Imoveis:
                 writer.write(line)
         if "r" in mode:
             return line
-    
