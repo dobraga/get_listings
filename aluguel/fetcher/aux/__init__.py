@@ -1,14 +1,17 @@
-import re
-from retry import retry
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.common.by import By
 from timeout_decorator import timeout
+from retry import retry
 from time import sleep
+import re
 
 @retry(tries=10, logger=None)
-@timeout(5)
-def get_with_retry(driver, url):
+@timeout(30)
+def get_sleep(driver, url, time_sleep=8, time_sleep_ini=0):
+    sleep(time_sleep_ini)
     driver.get(url)
-    if "zap" in url:
-        sleep(3)
+    sleep(time_sleep)
 
 
 def get(driver, xpath, to_int=False):
@@ -46,4 +49,31 @@ def flat(input: list):
     """
     Transforma lista de listas em uma lista e remove duplicadas
     """
-    return list(set(sum(input, [])))
+    output = []
+    for l in input:
+        if isinstance(l, list):
+            output += l
+        else:
+            output.append(l)
+
+    return output
+
+def str_flat(str: str):
+    return ''.join(str.split())
+
+def pass_cookie(driver):
+    try:
+        iframe_xpath = '//iframe[@name="mtm-frame-prompt"]'
+        iframe = WebDriverWait(driver, 20).until(
+            EC.visibility_of_element_located((By.XPATH, iframe_xpath))
+        )
+
+        driver.switch_to.frame(iframe)
+        get_if_exists(
+            driver, '//button[text()="Sim"]'
+        ).click()
+    except:
+        pass
+    finally:
+        driver.switch_to.default_content()
+
