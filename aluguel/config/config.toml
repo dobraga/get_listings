@@ -3,7 +3,7 @@ title = "ConfigFile"
 site = ["zap", "vivareal"]
 local = "Tijuca"
 # pegar_bairro = false
-max_page = 5
+max_page = 10
 
 valor_minimo = 50
 valor_maximo = 3500
@@ -21,6 +21,7 @@ urls_metro_trem = [
         [webdriver.desired_capabilities."selenoid:options"]
             enableVNC = true
             enableVideo = false
+            enableLog = false
 
 [zap]
     url = "https://www.zapimoveis.com.br"
