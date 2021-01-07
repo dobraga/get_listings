@@ -6,24 +6,32 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Remote
 from os.path import join, exists
-from retry import retry
 from time import sleep
 from math import ceil
 import pandas as pd
-from .aux import *
 import jsonlines
 import re
 
+try:
+    from .aux import *
+except:
+    from aluguel.fetcher.aux import *
+
+
+
 class Imoveis:
-    def __init__(self, conf):
+    def __init__(self, conf, log):
         self.conf = conf
+        self.log = log
         self.max_page = int(conf["max_page"])
         self.output = conf.get("output") or join(conf["dir_input"], "imoveis.jsonlines")
-        print("Será salvo no arquivo: ", self.output)
+
+        self.log.info(f"init: Será salvo no arquivo: {self.output}")
         if not exists(self.output):
             with open(self.output, 'w'): pass
 
         self.base_url = [self.make_url(conf, site) for site in conf["site"]]
+        self.log.debug(f"init: Urls iniciais: {self.base_url}")
 
         self.urls_extraidas = []
         if exists(self.output):
@@ -31,137 +39,156 @@ class Imoveis:
             if "url" in df.columns:
                 self.urls_extraidas = df.url.to_list()
 
-        print(f"Páginas iniciais: {self.base_url} \n")
 
 
     def run(self):
+        """
+        Run all proccess to get properties
+        """
         with ProcessPoolExecutor() as exe:
-            base_url = self.base_url
-            paginas = exe.map(self.get_paginas, base_url)
+            self.log.info("run: Criando url das páginas")
+            paginas = exe.map(self.get_paginas, self.base_url)
             paginas = flat(list(paginas))
-            print(f"Buscando um total de {len(paginas)} páginas")
+            self.log.info("run: Url páginas criadas")
 
+            self.log.info("run: Buscando url dos imóveis")
             imoveis = exe.map(self.get_imoveis, paginas)
             imoveis = flat(list(imoveis))
             imoveis = list(filter(lambda x: x not in self.urls_extraidas, imoveis))
-            print(f"Buscando um total de {len(imoveis)} imóveis")
+            self.log.info(f"run: Buscando um total de {len(imoveis)} imóveis")
 
             return list(exe.map(self.parse_imovel, imoveis))
-    
+
+
 
     def make_url(self, conf, site):
-        with Remote(**self.conf["webdriver"]) as driver:
-            driverw = WebDriverWait(driver, 20)
-            url = conf[site]["url"]
-            local = conf["local"]
-            valor_minimo = conf.get("valor_minimo", 0)
-            valor_maximo = conf.get("valor_maximo", 1000000)
-            tipo_contrato = conf[site]["tipo_contrato"]
-            tipo_propriedade = conf[site]["tipo_propriedade"]
+        """
+        Return the base url to get pages
+        """
+        try:
+            with Remote(**self.conf["webdriver"]) as driver:
+                session_id = driver.session_id
+                driverw = WebDriverWait(driver, 30)
 
-            get_sleep(driver, url)
+                url = conf[site]["url"]
+                local = conf["local"]
+                valor_minimo = conf.get("valor_minimo", 0)
+                valor_maximo = conf.get("valor_maximo", 1000000)
+                tipo_contrato = conf[site]["tipo_contrato"]
+                tipo_propriedade = conf[site]["tipo_propriedade"]
 
-
-            # popup de cookies
-            pass_cookie(driver)
-
-
-            # Seleciona o tipo de contrato
-            tipo_contrato_xpath = str_flat(f'''
-                //option[contains(text(), "{tipo_contrato}")] |
-                //button[@title="{tipo_contrato}"]
-            ''')
-            driverw.until(
-                EC.element_to_be_clickable((By.XPATH, tipo_contrato_xpath))
-            ).click()
+                get_sleep(driver, url)
 
 
-            # Seleciona o tipo da propriedade
-            tipo_propriedade_xpath = str_flat('''
-                //select[@class="js-select-type"] |
-                //select[contains(@class, "l-select__item")]
-            ''')
-            driverw.until(
-                EC.element_to_be_clickable((By.XPATH, tipo_propriedade_xpath))
-            ).click()
+                # popup de cookies
+                pass_cookie(driver)
 
 
-            tipo_propriedade_xpath = str_flat(f'''
-                //option[contains(text(), "{tipo_propriedade}")] |
-                //option[contains(text(), "{tipo_propriedade}")]
-            ''')
-            driverw.until(
-                EC.element_to_be_clickable((By.XPATH, tipo_propriedade_xpath))
-            ).click()
+                # Seleciona o tipo de contrato
+                tipo_contrato_xpath = str_flat(f'''
+                    //option[contains(text(), "{tipo_contrato}")] |
+                    //button[@title="{tipo_contrato}"]
+                ''')
+                driverw.until(
+                    EC.element_to_be_clickable((By.XPATH, tipo_contrato_xpath))
+                ).click()
 
 
-            # Seleciona o local
-            local_xpath = str_flat('''
-                //input[@id="filter-location-search-input"] |
-                //input[contains(@class, "js-typeahead-input")]
-            ''')
-
-            select_local = get_if_exists(driver, local_xpath)
-            select_local.send_keys(local)
-            sleep(3)
-            select_local.send_keys(Keys.ENTER)
+                # Seleciona o tipo da propriedade
+                tipo_propriedade_xpath = str_flat('''
+                    //select[@class="js-select-type"] |
+                    //select[contains(@class, "l-select__item")]
+                ''')
+                driverw.until(
+                    EC.element_to_be_clickable((By.XPATH, tipo_propriedade_xpath))
+                ).click()
 
 
-            # Buscar
-            buscar_xpath = str_flat('''
-                //button[contains(@class, "button-primary--standard")] |
-                //button[@data-qa="search-button"]
-            ''')
-
-            buscar = get_if_exists(driver, buscar_xpath)
-
-            if buscar:
-                buscar.click()
+                tipo_propriedade_xpath = str_flat(f'''
+                    //option[contains(text(), "{tipo_propriedade}")] |
+                    //option[contains(text(), "{tipo_propriedade}")]
+                ''')
+                driverw.until(
+                    EC.element_to_be_clickable((By.XPATH, tipo_propriedade_xpath))
+                ).click()
 
 
-            # Define range de preco
-            preco_xpath = str_flat('''
-                //button[contains(@class, "js-price-toggle")] | 
-                //div[contains(@class, "js-price-range")]
-            ''')
+                # Seleciona o local
+                local_xpath = str_flat('''
+                    //input[@id="filter-location-search-input"] |
+                    //input[contains(@class, "js-typeahead-input")]
+                ''')
 
-            preco = driverw.until(
-                EC.visibility_of_element_located((By.XPATH, preco_xpath))
-            )
+                select_local = get_if_exists(driver, local_xpath)
+                select_local.send_keys(local)
+                sleep(3)
+                select_local.send_keys(Keys.ENTER)
 
-            if preco:
-                url = driver.current_url
 
-                preco.click()
+                # Buscar
+                buscar_xpath = str_flat('''
+                    //button[contains(@class, "button-primary--standard")] |
+                    //button[@data-qa="search-button"]
+                ''')
 
-                preco_min = get_if_exists(
-                    driver, 
-                    str_flat('''
-                        //input[contains(@class, "js-price-min")] |
-                        //input[@id="filter-range-from-price"]
-                    ''')
+                buscar = get_if_exists(driver, buscar_xpath)
+
+                if buscar:
+                    buscar.click()
+
+
+                # Define range de preco
+                preco_xpath = str_flat('''
+                    //button[contains(@class, "js-price-toggle")] | 
+                    //div[contains(@class, "js-price-range")]
+                ''')
+
+                preco = driverw.until(
+                    EC.visibility_of_element_located((By.XPATH, preco_xpath))
                 )
-                preco_min.send_keys(valor_minimo)
 
-                preco_max = get_if_exists(
-                    driver, 
-                    str_flat('''
-                        //input[contains(@class, "js-price-max")] |
-                        //input[@id="filter-range-to-price"]
-                    ''')
-                )
-                preco_max.send_keys(valor_maximo)
+                if preco:
+                    url = driver.current_url
 
-                preco.click()
+                    preco.click()
 
-                while url == driver.current_url:
-                    sleep(1)
+                    preco_min = get_if_exists(
+                        driver, 
+                        str_flat('''
+                            //input[contains(@class, "js-price-min")] |
+                            //input[@id="filter-range-from-price"]
+                        ''')
+                    )
+                    preco_min.send_keys(valor_minimo)
 
-                return driver.current_url
+                    preco_max = get_if_exists(
+                        driver, 
+                        str_flat('''
+                            //input[contains(@class, "js-price-max")] |
+                            //input[@id="filter-range-to-price"]
+                        ''')
+                    )
+                    preco_max.send_keys(valor_maximo)
+
+                    preco.click()
+
+                    while url == driver.current_url:
+                        sleep(1)
+
+                    return driver.current_url
+
+        except TimeoutException:
+            self.log.error(f"make_url: {session_id}: {url}: cansei de esperar")
+
+        except Exception as e:
+            self.log.error(f"make_url: {session_id}: {url}: {e}")
 
 
 
     def get_paginas(self, url:str) -> list:
+        """
+        Return the url pages
+        """
         with Remote(**self.conf["webdriver"]) as driver:
             get_sleep(driver, url)
 
@@ -191,7 +218,11 @@ class Imoveis:
 
 
     def get_imoveis(self, url:str) -> list:
+        """
+        Return the properties link
+        """
         with Remote(**self.conf["webdriver"]) as driver:
+            session_id = driver.session_id
             get_sleep(
                 driver, url, time_sleep=5,
                 time_sleep_ini=5 if "zap" in url else 0
@@ -217,7 +248,7 @@ class Imoveis:
 
                     while driver.current_url == u:
                         if tentativa % 20 == 0:
-                            print(f"retry {tentativa}: {url}")
+                            self.log.warning(f"get_imoveis: {session_id}: {url}: tentativa {tentativa} de buscar imóveis")
                             get_sleep(driver, url)
 
                         botao = driver.find_elements_by_xpath(xpath)[idx]
@@ -242,13 +273,16 @@ class Imoveis:
             return links
 
 
-    @retry(tries=5)
+
     def parse_imovel(self, url:str, mode="w") -> dict:
+        """
+        Return the property information
+        """
         with Remote(**self.conf["webdriver"]) as driver:
             try:
                 session_id = driver.session_id
                 get_sleep(driver, url, time_sleep_ini=5 if "zap" in url else 0)
-                driverw = WebDriverWait(driver, 20)
+                driverw = WebDriverWait(driver, 40)
 
                 id_ = re.findall("(id)-(\d{5,10})", url)[0][1]
 
@@ -365,6 +399,7 @@ class Imoveis:
                     imagens = [img.get_attribute("src") for img in imagens]
                 except TimeoutException:
                     imagens = []
+                    self.log.warning(f"parse_imovel: {session_id}: {url}: sem imagens")
 
                 sucesso, tentativa = False, 1
                 glink, lat, lng = "", "", ""
@@ -407,14 +442,14 @@ class Imoveis:
 
                     except Exception as e:
                         tentativa += 1
-                        print(f"retry {tentativa}: {url}")
+                        self.log.info(f"parse_imovel: {session_id}: {url}: tentativa {tentativa}")
                         get_sleep(driver, url, 10)
 
                     finally:
                         driver.switch_to.default_content()
 
                 if not sucesso:
-                    print(f"latlong não encontrada: {session_id} {url}")
+                    self.log.warning(f"parse_imovel: {session_id}: {url}: latlong não encontrada")
 
                 line = {
                     "id": id_,
@@ -442,5 +477,4 @@ class Imoveis:
                 return line
         
             except Exception as e:
-                print(e)
-                print(session_id, " ", url)
+                self.log.warning(f"parse_imovel: {session_id}: {url}: {e}")

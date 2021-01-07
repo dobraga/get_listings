@@ -45,7 +45,7 @@ def parse_int(s, to_int=False):
             return ""
 
 
-def flat(input: list):
+def flat(input: list) -> list:
     """
     Transforma lista de listas em uma lista e remove duplicadas
     """
@@ -58,8 +58,10 @@ def flat(input: list):
 
     return output
 
+
 def str_flat(str: str):
     return ''.join(str.split())
+
 
 def pass_cookie(driver):
     try:

@@ -1,6 +1,6 @@
 import scrapy
 from scrapy.crawler import CrawlerProcess
-from os.path import join, abspath, dirname, exists
+from os.path import join, exists
 from os import remove
 
 
@@ -15,6 +15,8 @@ class MetroSpyder(scrapy.Spider):
 
         self.file = join(conf["dir_input"], "metro.jsonlines")
 
+
+
     def run(self, settings=None):
         if exists(self.file):
             remove(self.file)
@@ -28,6 +30,8 @@ class MetroSpyder(scrapy.Spider):
         crawler_process = CrawlerProcess(settings)
         crawler_process.crawl(MetroSpyder, conf=self.conf)
         crawler_process.start()
+
+
 
     def parse(self, response):
         links = response.xpath(
@@ -45,6 +49,8 @@ class MetroSpyder(scrapy.Spider):
                 cb_kwargs={"linha": linha[i]},
             )
 
+
+
     def parse_linha(self, response, linha):
         links = response.xpath(
             '//*[@id="mw-content-text"]/div[1]//table/tbody/tr/td/a[contains(@href, "wiki/Esta")]/@href'
@@ -56,6 +62,8 @@ class MetroSpyder(scrapy.Spider):
                 callback=self.parse_estacao,
                 cb_kwargs={"linha": linha},
             )
+
+
 
     def parse_estacao(self, response, linha):
         estacao = response.xpath('//*[@id="firstHeading"]/text()').get()
@@ -69,6 +77,8 @@ class MetroSpyder(scrapy.Spider):
                 callback=self.pase_latlng,
                 cb_kwargs={"linha": linha, "estacao": estacao},
             )
+
+
 
     def pase_latlng(self, response, linha, estacao):
         latlng = response.xpath(

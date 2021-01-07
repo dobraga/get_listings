@@ -3,9 +3,9 @@ title = "ConfigFile"
 site = ["zap", "vivareal"]
 local = "Tijuca"
 # pegar_bairro = false
-max_page = 10
+max_page = 5
 
-valor_minimo = 50
+valor_minimo = 1500
 valor_maximo = 3500
 
 urls_metro_trem = [
@@ -19,8 +19,8 @@ urls_metro_trem = [
         browserName = "firefox"
         browserVersion = "83.0"
         [webdriver.desired_capabilities."selenoid:options"]
-            enableVNC = true
-            enableVideo = false
+            enableVNC = false
+            enableVideo = true
             enableLog = false
 
 [zap]
