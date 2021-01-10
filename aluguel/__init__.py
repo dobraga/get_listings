@@ -37,7 +37,7 @@ class RemoteLogger():
 
 
     def __exit__(self, type, value, traceback):
-        self.driver.close()
+        self.driver.quit()
 
         if type:
             self.log.error(f"{self.msg}: {str(value)}")
