@@ -2,9 +2,9 @@ if __name__ == "__main__":
     from aluguel.data.preprocess import preprocess
     from aluguel.fetcher.metro import MetroSpyder
     from aluguel.fetcher.imoveis import Imoveis
-    from aluguel.config import Configurations
-    from aluguel.config.log import Logger
-    from aluguel import Selenoid, timeit
+    from aluguel.util.config import Configurations
+    from aluguel.util.log import Logger
+    from aluguel.util.context import Selenoid, timeit
     from time import sleep
     
     log = Logger("aluguel")

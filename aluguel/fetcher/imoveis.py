@@ -13,10 +13,10 @@ import re
 
 try:
     from .aux import *
-    from .. import RemoteLogger
+    from ..util.context import RemoteLogger
 except:
     from aluguel.fetcher.aux import *
-    from aluguel import RemoteLogger
+    from aluguel.util.context import RemoteLogger
 
 
 
