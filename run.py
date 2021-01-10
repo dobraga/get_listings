@@ -20,7 +20,8 @@ if __name__ == "__main__":
                 with timeit(log, "Processo finalizado em {delta} segundos"):
                     imovel.run()
                     preprocess()
-                    sleep(1*60*60) # Buscar dados novos a cada uma hora
+
+                sleep(1*60*60) # Buscar dados novos a cada uma hora
 
     except KeyboardInterrupt:
         log.warning("Processo cancelado\n")
