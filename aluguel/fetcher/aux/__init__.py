@@ -66,7 +66,7 @@ def str_flat(str: str):
 def pass_cookie(driver):
     try:
         iframe_xpath = '//iframe[@name="mtm-frame-prompt"]'
-        iframe = WebDriverWait(driver, 20).until(
+        iframe = WebDriverWait(driver, 50).until(
             EC.visibility_of_element_located((By.XPATH, iframe_xpath))
         )
 
