@@ -55,6 +55,9 @@ class Imoveis:
             self.log.info("run: Buscando url dos imóveis")
             imoveis = exe.map(self.get_imoveis, paginas)
             imoveis = flat(list(imoveis).copy())
+            filtrados = len(list(filter(lambda x: x in self.urls_extraidas, imoveis)))
+            self.log.info(f"run: Total de {len(imoveis)} urls de imóveis, porem {filtrados} já extraídos")
+
             imoveis = list(filter(lambda x: x not in self.urls_extraidas, imoveis))
             self.log.info(f"run: Buscando um total de {len(imoveis)} imóveis")
 
@@ -216,10 +219,7 @@ class Imoveis:
         """
         with RemoteLogger(self.conf["webdriver"], self.log, "get_imoveis", url) as driver:
             session_id = driver.session_id
-            print(url, session_id)
             get_sleep(driver, url, time_sleep=5)
-
-            print(driver.current_url)
 
             botoes = driver.find_elements(
                 By.XPATH,
@@ -229,8 +229,6 @@ class Imoveis:
                 ''')
             )
 
-            print(botoes)
-
             try:
                 links = [botao.get_attribute("href") for botao in botoes]
             except:
@@ -239,9 +237,10 @@ class Imoveis:
             if not all(links):
                 def click_get_link(driver, xpath, idx):
                     tentativa = 1
-                    u = driver.current_url
+                    url = driver.current_url
+                    u = url
 
-                    while driver.current_url in [u, "about:blank"]:
+                    while u in [url, "about:blank"]:
                         if tentativa % 20 == 0:
                             self.log.warning(f"get_imoveis: {session_id}: {url}: tentativa {tentativa} de buscar imóveis")
                             get_sleep(driver, url)
@@ -251,12 +250,11 @@ class Imoveis:
                             botao.click()
                             driver.switch_to.window(driver.window_handles[1])
                             sleep(1)
-                            u = driver.current_url
-                        finally:
-                            sleep(2)
 
-                        tentativa += 1
-                        driver.switch_to.window(driver.window_handles[0])
+                        finally:
+                            tentativa += 1
+                            u = driver.current_url
+                            driver.switch_to.window(driver.window_handles[0])
 
                     return u
 
@@ -264,8 +262,6 @@ class Imoveis:
                     click_get_link(driver, '//div[@class="card-container"]', idx)
                     for idx in range(len(botoes))
                 ]
-
-            print(links)
 
             return links
 
