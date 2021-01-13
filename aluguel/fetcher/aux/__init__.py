@@ -59,10 +59,6 @@ def flat(input: list) -> list:
     return output
 
 
-def str_flat(str: str):
-    return ''.join(str.split())
-
-
 def pass_cookie(driver):
     try:
         iframe_xpath = '//iframe[@name="mtm-frame-prompt"]'
