@@ -1,4 +1,4 @@
-Para configurar a extração, basta modificar o arquivo `aluguel/config/config.toml`.
+Para configurar a extração, basta modificar o arquivo `./config/config.toml`.
 
 Para instalar e ativar o environment anaconda, execute:
 
