@@ -9,7 +9,7 @@ def Logger(file_name:str, level:str="INFO") -> logging.Logger:
     Classe utilizada para criar o Log
     """
     formatter = logging.Formatter(
-        fmt="%(asctime)s, %(module)s, line: %(lineno)3d, %(levelname)8s : %(message)s",
+        fmt="%(asctime)s: line: %(lineno)3d: %(levelname)8s : %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
