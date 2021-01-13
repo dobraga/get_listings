@@ -2,6 +2,7 @@ import os
 import requests
 from math import log
 from time import time
+from . import str_flat
 from selenium.webdriver import Remote
 
 class timeit():
@@ -19,9 +20,13 @@ class timeit():
 
 
 class RemoteLogger():
-    def __init__(self, config:dict, log, what:str = None, url:str = None):
+    def __init__(
+        self, config:dict, log, what:str = None,
+        url:str = None, implicitly_wait:int = 30
+    ):
         self.log = log
         self.driver = Remote(**config)
+        self.driver.implicitly_wait(implicitly_wait)
         msg = self.driver.session_id
 
         if what:
@@ -40,7 +45,7 @@ class RemoteLogger():
         self.driver.quit()
 
         if type:
-            self.log.error(f"{self.msg}: {str(value)}")
+            self.log.error(f"{self.msg}: {str_flat(str(value), ' ')}")
         else:
             self.log.debug(f"{self.msg}: com sucesso")
 
@@ -55,7 +60,7 @@ class Selenoid():
 
     def __enter__(self):
         if not os.path.exists("cm"):
-            log.info("Baixando Selenoid ...")
+            self.log.info("Baixando Selenoid ...")
             r = requests.get("https://github.com/aerokube/cm/releases/download/1.7.2/cm_linux_amd64")
             with open("cm", "wb") as file:
                 file.write(r.content)
@@ -67,6 +72,7 @@ class Selenoid():
         os.system("./cm selenoid start")
         os.system("./cm selenoid-ui start")
         self.log.info("Selenoid iniciou com sucesso")
+        return self
 
 
     def __exit__(self, *args):
