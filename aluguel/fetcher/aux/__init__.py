@@ -8,8 +8,7 @@ import re
 
 @retry(tries=10, logger=None)
 @timeout(30)
-def get_sleep(driver, url, time_sleep=8, time_sleep_ini=0):
-    sleep(time_sleep_ini)
+def get_sleep(driver, url, time_sleep=8):
     driver.get(url)
     sleep(time_sleep)
 
@@ -59,17 +58,15 @@ def flat(input: list) -> list:
     return output
 
 
-def pass_cookie(driver):
+def pass_cookie(driver, timeout = 60):
     try:
         iframe_xpath = '//iframe[@name="mtm-frame-prompt"]'
-        iframe = WebDriverWait(driver, 50).until(
+        iframe = WebDriverWait(driver, timeout).until(
             EC.visibility_of_element_located((By.XPATH, iframe_xpath))
         )
 
         driver.switch_to.frame(iframe)
-        get_if_exists(
-            driver, '//button[text()="Sim"]'
-        ).click()
+        driver.find_element(By.XPATH, '//button[text()="Sim"]').click()
     except:
         pass
     finally:

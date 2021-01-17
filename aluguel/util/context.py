@@ -1,8 +1,8 @@
 import os
-import requests
 from time import time
 from . import str_flat
 from selenium.webdriver import Remote
+from ..fetcher.aux import get_sleep
 
 class timeit():
     def __init__(self, log, msg:str):
@@ -35,6 +35,9 @@ class RemoteLogger():
 
         self.msg = msg
 
+        if url:
+            get_sleep(self.driver, url)
+
 
     def __enter__(self):
         return self.driver
@@ -56,26 +59,12 @@ class Selenoid():
     def __init__(self, log):
         self.log = log
 
-
     def __enter__(self):
-        if not os.path.exists("cm"):
-            self.log.info("Baixando Selenoid ...")
-            r = requests.get("https://github.com/aerokube/cm/releases/download/1.7.2/cm_linux_amd64")
-            with open("cm", "wb") as file:
-                file.write(r.content)
-            os.system("chmod +x cm")
-            self.log.info("Selenoid baixado com sucesso")
-        else:
-            self.log.debug("Selenoid já existente")
-
-        os.system("./cm selenoid start")
-        os.system("./cm selenoid-ui start")
+        os.system("docker-compose -f \"docker-compose.yml\" up -d --build")
         self.log.info("Selenoid iniciou com sucesso")
         return self
 
-
     def __exit__(self, *args):
-        os.system("./cm selenoid-ui stop")
-        os.system("./cm selenoid stop")
+        os.system("docker-compose -f \"docker-compose.yml\" down")
         self.log.info("Selenoid parou com sucesso")
 

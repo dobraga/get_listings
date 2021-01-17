@@ -4,12 +4,19 @@ if __name__ == "__main__":
     from aluguel.util.config import Configurations
     from aluguel.fetcher.metro import MetroSpyder
     from aluguel.fetcher.imoveis import Imoveis
+    from aluguel.util import remove_files
     from aluguel.util.log import Logger
     from time import sleep
     
     conf = Configurations()
-    MetroSpyder(conf).run()
-    log = Logger("aluguel")
+    log_file = "aluguel.log"
+
+    # MetroSpyder(conf).run()
+
+    remove_files("./logs", [log_file])
+    remove_files("./video")
+
+    log = Logger(log_file)
 
     try:
         with Selenoid(log):

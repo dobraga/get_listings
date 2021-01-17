@@ -23,7 +23,7 @@ def Logger(file_name:str, level:str="INFO") -> logging.Logger:
         level = logging.INFO
 
     logging.basicConfig(
-        filename=join(basedir, file_name + ".log"),
+        filename=join(basedir, "logs", file_name),
         format="%(asctime)s, %(module)7s, line: %(lineno)3d, %(levelname)4s: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
         filemode="a",

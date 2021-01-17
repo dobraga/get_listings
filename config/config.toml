@@ -16,11 +16,11 @@ urls_metro_trem = [
     command_executor = "http://localhost:4444/wd/hub"
     [webdriver.desired_capabilities]
         browserName = "firefox"
-        browserVersion = "83.0"
+        browserVersion = "84.0"
         [webdriver.desired_capabilities."selenoid:options"]
-            enableVNC = true
+            enableVNC = false
             enableVideo = true
-            enableLog = false
+            enableLog = true
 
 [zap]
     url = "https://www.zapimoveis.com.br"

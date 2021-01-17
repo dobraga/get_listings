@@ -72,12 +72,8 @@ class Imoveis:
         """
         Return the base url to get pages
         """
-        with RemoteLogger(self.conf["webdriver"], self.log, "make_url", site) as driver:
-            url = self.conf[site]["url"]
-            get_sleep(driver, url)
-
-            print(driver.session_id)
-
+        url = self.conf[site]["url"]
+        with RemoteLogger(self.conf["webdriver"], self.log, "make_url", url) as driver:
             local = self.conf["local"]
             valor_minimo = self.conf.get("valor_minimo", -1)
             valor_maximo = self.conf.get("valor_maximo", -1)
@@ -171,8 +167,6 @@ class Imoveis:
         Return the url pages
         """
         with RemoteLogger(self.conf["webdriver"], self.log, "get_paginas", url) as driver:
-            get_sleep(driver, url)
-
             qtd_imoveis_total = get(driver, "//h1")
             qtd_imoveis_total = re.match("([^\s]+)", qtd_imoveis_total).group()
             qtd_imoveis_total = parse_int(qtd_imoveis_total, True)
@@ -217,8 +211,6 @@ class Imoveis:
 
 
         with RemoteLogger(self.conf["webdriver"], self.log, "get_imoveis", url) as driver:
-            get_sleep(driver, url, time_sleep=5)
-
             pass_cookie(driver)
 
             botoes_xpath = str_flat('''
@@ -241,9 +233,8 @@ class Imoveis:
         Return the property information
         """
         with RemoteLogger(self.conf["webdriver"], self.log, "parse_imovel", url) as driver:
-            session_id = driver.session_id
-            get_sleep(driver, url, time_sleep_ini=5 if "zap" in url else 0)
             pass_cookie(driver)
+            session_id = driver.session_id
 
             id_ = re.findall("(id)-(\d{5,10})", url)[0][1]
 
