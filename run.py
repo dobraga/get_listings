@@ -11,7 +11,7 @@ if __name__ == "__main__":
     conf = Configurations()
     log_file = "aluguel.log"
 
-    # MetroSpyder(conf).run()
+    MetroSpyder(conf).run()
 
     remove_files("./logs", [log_file])
     remove_files("./video")
