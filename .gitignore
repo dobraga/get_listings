@@ -211,4 +211,5 @@ vignettes/*.pdf
 *.jsonlines
 *.npz
 *.pkl
-cm
+*.mp4
+*.log
