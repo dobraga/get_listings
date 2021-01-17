@@ -7,5 +7,6 @@ def Configurations():
 
     conf = toml.load(join(dir_project, "config", "config.toml"))
     conf["dir_input"] = join(dir_project, "data", "input")
+    conf["dir_output"] = join(dir_project, "data", "output")
 
     return conf

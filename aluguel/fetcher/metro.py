@@ -1,10 +1,10 @@
-import scrapy
 from scrapy.crawler import CrawlerProcess
+from scrapy import Spider, Request
 from os.path import join, exists
 from os import remove
 
 
-class MetroSpyder(scrapy.Spider):
+class MetroSpyder(Spider):
     name = "metro"
 
     def __init__(self, conf, **kwargs):
@@ -17,14 +17,13 @@ class MetroSpyder(scrapy.Spider):
 
 
 
-    def run(self, settings=None):
+    def run(self):
         if exists(self.file):
             remove(self.file)
 
-        settings = settings or {
+        settings = {
             "FEEDS": {self.file: {"format": "jsonlines", "encoding": "utf8",},},
-            "HTTPERROR_ALLOWED_CODES": [403],
-            "LOG_LEVEL": "WARN",
+            "HTTPERROR_ALLOWED_CODES": [403]
         }
 
         crawler_process = CrawlerProcess(settings)
@@ -34,16 +33,13 @@ class MetroSpyder(scrapy.Spider):
 
 
     def parse(self, response):
-        links = response.xpath(
-            '//*[@id="mw-content-text"]/div[1]/table/tbody/tr/td/small/a/@href'
-        ).getall()
+        base_xpath = '(//table/tbody/tr/th[contains(text(), "erminais")]/../..)[1]/tr/td[1]//a'
 
-        linha = response.xpath(
-            '//*[@id="mw-content-text"]/div[1]/table/tbody/tr/td/small/a//@title'
-        ).getall()
+        links = response.xpath(base_xpath + '/@href').getall()
+        linha = response.xpath(base_xpath + '/@title').getall()
 
         for i, link in enumerate(links):
-            yield scrapy.Request(
+            yield Request(
                 response.urljoin(link),
                 callback=self.parse_linha,
                 cb_kwargs={"linha": linha[i]},
@@ -53,11 +49,11 @@ class MetroSpyder(scrapy.Spider):
 
     def parse_linha(self, response, linha):
         links = response.xpath(
-            '//*[@id="mw-content-text"]/div[1]//table/tbody/tr/td/a[contains(@href, "wiki/Esta")]/@href'
+            '//table/tbody/tr/td/a[contains(@href, "wiki/Esta")]/@href'
         ).getall()
 
         for link in links:
-            yield scrapy.Request(
+            yield Request(
                 response.urljoin(link),
                 callback=self.parse_estacao,
                 cb_kwargs={"linha": linha},
@@ -68,11 +64,11 @@ class MetroSpyder(scrapy.Spider):
     def parse_estacao(self, response, linha):
         estacao = response.xpath('//*[@id="firstHeading"]/text()').get()
         link = response.xpath(
-            '//*[@id="mw-content-text"]//a[contains(@href, "tools.wmflabs.org")]/@href'
+            '//a[contains(@href, "tools.wmflabs.org")]/@href'
         ).get()
 
         if link:
-            yield scrapy.Request(
+            yield Request(
                 link,
                 callback=self.pase_latlng,
                 cb_kwargs={"linha": linha, "estacao": estacao},
@@ -81,9 +77,7 @@ class MetroSpyder(scrapy.Spider):
 
 
     def pase_latlng(self, response, linha, estacao):
-        latlng = response.xpath(
-            '//*[@id="mw-content-text"]/div/div[1]/table/tbody/tr[1]/td[1]/span[3]/span/text()'
-        ).getall()
+        latlng = response.xpath('//*[@class="geo"]/span/text()').getall()
 
         yield {
             "linha": linha,

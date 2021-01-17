@@ -1,10 +1,9 @@
 from concurrent.futures import ProcessPoolExecutor
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.wait import WebDriverWait
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from os.path import join, exists
+from datetime import datetime
 from time import sleep
 from math import ceil
 import pandas as pd
@@ -13,9 +12,11 @@ import re
 
 try:
     from .aux import *
+    from ..util import str_flat
     from ..util.context import RemoteLogger
 except:
     from aluguel.fetcher.aux import *
+    from aluguel.util import str_flat
     from aluguel.util.context import RemoteLogger
 
 
@@ -31,15 +32,17 @@ class Imoveis:
         if not exists(self.output):
             with open(self.output, 'w'): pass
 
-        self.base_url = [self.make_url(conf, site) for site in conf["site"]]
-        self.log.debug(f"init: Urls iniciais: {self.base_url}")
-
         self.urls_extraidas = []
         if exists(self.output):
             df = pd.read_json(self.output, lines=True)
             if "url" in df.columns:
                 self.urls_extraidas = df.url.to_list()
 
+        self.log.info("run: Criando url iniciais")
+        with ProcessPoolExecutor() as exe:
+            base_url = exe.map(self.make_url, conf["site"])
+            self.base_url = list(base_url).copy()
+        self.log.info(f"init: Urls iniciais:\n{self.base_url}")
 
 
     def run(self):
@@ -65,55 +68,44 @@ class Imoveis:
 
 
 
-    def make_url(self, conf, site):
+    def make_url(self, site):
         """
         Return the base url to get pages
         """
         with RemoteLogger(self.conf["webdriver"], self.log, "make_url", site) as driver:
-            driverw = WebDriverWait(driver, 30)
-
-            url = conf[site]["url"]
-            local = conf["local"]
-            valor_minimo = conf.get("valor_minimo", 0)
-            valor_maximo = conf.get("valor_maximo", 1000000)
-            tipo_contrato = conf[site]["tipo_contrato"]
-            tipo_propriedade = conf[site]["tipo_propriedade"]
-
+            url = self.conf[site]["url"]
             get_sleep(driver, url)
 
+            print(driver.session_id)
+
+            local = self.conf["local"]
+            valor_minimo = self.conf.get("valor_minimo", -1)
+            valor_maximo = self.conf.get("valor_maximo", -1)
+            tipo_contrato = self.conf[site]["tipo_contrato"]
+            tipo_propriedade = self.conf[site]["tipo_propriedade"]
 
             # popup de cookies
             pass_cookie(driver)
-
 
             # Seleciona o tipo de contrato
             tipo_contrato_xpath = str_flat(f'''
                 //option[contains(text(), "{tipo_contrato}")] |
                 //button[@title="{tipo_contrato}"]
             ''')
-            driverw.until(
-                EC.element_to_be_clickable((By.XPATH, tipo_contrato_xpath))
-            ).click()
-
+            driver.find_element(By.XPATH, tipo_contrato_xpath).click()
 
             # Seleciona o tipo da propriedade
             tipo_propriedade_xpath = str_flat('''
                 //select[@class="js-select-type"] |
                 //select[contains(@class, "l-select__item")]
             ''')
-            driverw.until(
-                EC.element_to_be_clickable((By.XPATH, tipo_propriedade_xpath))
-            ).click()
-
+            driver.find_element(By.XPATH, tipo_propriedade_xpath).click()
 
             tipo_propriedade_xpath = str_flat(f'''
                 //option[contains(text(), "{tipo_propriedade}")] |
                 //option[contains(text(), "{tipo_propriedade}")]
             ''')
-            driverw.until(
-                EC.element_to_be_clickable((By.XPATH, tipo_propriedade_xpath))
-            ).click()
-
+            driver.find_element(By.XPATH, tipo_propriedade_xpath).click()
 
             # Seleciona o local
             local_xpath = str_flat('''
@@ -121,63 +113,56 @@ class Imoveis:
                 //input[contains(@class, "js-typeahead-input")]
             ''')
 
-            select_local = get_if_exists(driver, local_xpath)
+            select_local = driver.find_element(By.XPATH, local_xpath)
             select_local.send_keys(local)
             sleep(3)
             select_local.send_keys(Keys.ENTER)
 
-
             # Buscar
-            buscar_xpath = str_flat('''
-                //button[contains(@class, "button-primary--standard")] |
-                //button[@data-qa="search-button"]
-            ''')
-
-            buscar = get_if_exists(driver, buscar_xpath)
-
-            if buscar:
-                buscar.click()
-
+            if "zap" in url:
+                buscar_xpath = str_flat('''
+                    //button[contains(@class, "button-primary--standard")] |
+                    //button[@data-qa="search-button"]
+                ''')
+                driver.find_element(By.XPATH, buscar_xpath).click()
 
             # Define range de preco
-            preco_xpath = str_flat('''
-                //button[contains(@class, "js-price-toggle")] | 
-                //div[contains(@class, "js-price-range")]
-            ''')
+            if valor_minimo > 0 or valor_maximo > 0:
+                preco_xpath = str_flat('''
+                    //button[contains(@class, "js-price-toggle")] | 
+                    //div[contains(@class, "js-price-range")]
+                ''')
+                preco = driver.find_element(By.XPATH, preco_xpath)
 
-            preco = driverw.until(
-                EC.visibility_of_element_located((By.XPATH, preco_xpath))
-            )
-
-            if preco:
                 url = driver.current_url
 
                 preco.click()
 
-                preco_min = get_if_exists(
-                    driver, 
-                    str_flat('''
-                        //input[contains(@class, "js-price-min")] |
-                        //input[@id="filter-range-from-price"]
-                    ''')
-                )
-                preco_min.send_keys(valor_minimo)
+                if valor_minimo > 0:
+                    preco_min = get_if_exists(
+                        driver, 
+                        str_flat('''
+                            //input[contains(@class, "js-price-min")] |
+                            //input[@id="filter-range-from-price"]
+                        ''')
+                    )
+                    preco_min.send_keys(valor_minimo)
 
-                preco_max = get_if_exists(
-                    driver, 
-                    str_flat('''
-                        //input[contains(@class, "js-price-max")] |
-                        //input[@id="filter-range-to-price"]
-                    ''')
-                )
-                preco_max.send_keys(valor_maximo)
-
-                preco.click()
+                if valor_maximo > 0:
+                    preco_max = get_if_exists(
+                        driver, 
+                        str_flat('''
+                            //input[contains(@class, "js-price-max")] |
+                            //input[@id="filter-range-to-price"]
+                        ''')
+                    )
+                    preco_max.send_keys(valor_maximo)
 
                 while url == driver.current_url:
+                    preco.click()
                     sleep(1)
 
-                return driver.current_url
+            return driver.current_url
 
 
 
@@ -189,7 +174,8 @@ class Imoveis:
             get_sleep(driver, url)
 
             qtd_imoveis_total = get(driver, "//h1")
-            qtd_imoveis_total = parse_int(re.match("([^\s]+)", qtd_imoveis_total).group(), True)
+            qtd_imoveis_total = re.match("([^\s]+)", qtd_imoveis_total).group()
+            qtd_imoveis_total = parse_int(qtd_imoveis_total, True)
 
             qtd_imoveis_pagina = len(
                 driver.find_elements(
@@ -217,51 +203,34 @@ class Imoveis:
         """
         Return the properties link
         """
+        def click_get_link(driver, botao):
+            botao.click()
+            driver.switch_to.window(driver.window_handles[1])
+            _ = get( driver, '//*[contains(@class,"main__info--title")]')
+            sleep(0.5)
+            u = driver.current_url
+
+            driver.close()
+            driver.switch_to.window(driver.window_handles[0])
+
+            return u
+
+
         with RemoteLogger(self.conf["webdriver"], self.log, "get_imoveis", url) as driver:
-            session_id = driver.session_id
             get_sleep(driver, url, time_sleep=5)
 
-            botoes = driver.find_elements(
-                By.XPATH,
-                str_flat('''
-                    //a[contains(@class, "js-card-title")] |
-                    //div[@class="card-container"]
-                ''')
-            )
+            pass_cookie(driver)
 
-            try:
-                links = [botao.get_attribute("href") for botao in botoes]
-            except:
-                links = []
+            botoes_xpath = str_flat('''
+                //a[contains(@class, "js-card-title")] |
+                //div[@class="card-container"]
+            ''')
+            botoes = driver.find_elements(By.XPATH, botoes_xpath)
 
-            if not all(links):
-                def click_get_link(driver, xpath, idx):
-                    tentativa = 1
-                    url = driver.current_url
-                    u = url
-
-                    while u in [url, "about:blank"]:
-                        if tentativa % 20 == 0:
-                            self.log.warning(f"get_imoveis: {session_id}: {url}: tentativa {tentativa} de buscar imóveis")
-                            get_sleep(driver, url)
-
-                        botao = driver.find_elements_by_xpath(xpath)[idx]
-                        try:
-                            botao.click()
-                            driver.switch_to.window(driver.window_handles[1])
-                            sleep(1)
-
-                        finally:
-                            tentativa += 1
-                            u = driver.current_url
-                            driver.switch_to.window(driver.window_handles[0])
-
-                    return u
-
-                links = [
-                    click_get_link(driver, '//div[@class="card-container"]', idx)
-                    for idx in range(len(botoes))
-                ]
+            links = [
+                botao.get_attribute("href") or click_get_link(driver, botao) 
+                for botao in botoes
+            ]
 
             return links
 
@@ -274,7 +243,7 @@ class Imoveis:
         with RemoteLogger(self.conf["webdriver"], self.log, "parse_imovel", url) as driver:
             session_id = driver.session_id
             get_sleep(driver, url, time_sleep_ini=5 if "zap" in url else 0)
-            driverw = WebDriverWait(driver, 40)
+            pass_cookie(driver)
 
             id_ = re.findall("(id)-(\d{5,10})", url)[0][1]
 
@@ -282,11 +251,7 @@ class Imoveis:
                 //*[@class="price__title"] |
                 //*[contains(@class,"info__business-type")]
             ''')
-
-            tipo = driverw.until(
-                EC.visibility_of_element_located((By.XPATH, tipo_xpath))
-            ).text
-
+            tipo = driver.find_element(By.XPATH, tipo_xpath).text
 
             title = get(
                 driver, 
@@ -296,7 +261,6 @@ class Imoveis:
                 ''')
             )
 
-
             endereco = get(
                 driver, 
                 str_flat('''
@@ -304,7 +268,6 @@ class Imoveis:
                     //*[contains(@class, "info__map-link")]
                 ''')
             )
-
 
             metragem = get(
                 driver, 
@@ -315,7 +278,6 @@ class Imoveis:
                 True
             )
 
-
             quartos = get(
                 driver, 
                 str_flat('''
@@ -324,7 +286,6 @@ class Imoveis:
                 '''),
                 True
             )
-
 
             banheiros = get(
                 driver, 
@@ -335,7 +296,6 @@ class Imoveis:
                 True
             )
 
-
             vagas = get(
                 driver, 
                 str_flat('''
@@ -345,7 +305,6 @@ class Imoveis:
                 True
             )
 
-
             desc = driver.find_elements(
                 By.XPATH,
                 str_flat('''
@@ -353,8 +312,6 @@ class Imoveis:
                     //*[contains(@class,"amenities__description")]
                 ''')
             )
-
-
             desc = " ".join([d.text for d in desc])
 
             preco = get(
@@ -365,7 +322,6 @@ class Imoveis:
                 '''),
                 True
             )
-
 
             condominio = get(
                 driver, 
@@ -382,10 +338,6 @@ class Imoveis:
             ''')
 
             try:
-                driverw.until(
-                    EC.visibility_of_element_located((By.XPATH, img_xpath))
-                )
-
                 imagens = driver.find_elements(By.XPATH, img_xpath)
 
                 imagens = [img.get_attribute("src") for img in imagens]
@@ -393,7 +345,7 @@ class Imoveis:
                 imagens = []
                 self.log.warning(f"parse_imovel: {session_id}: {url}: sem imagens")
 
-            sucesso, tentativa = False, 1
+            sucesso, tentativa = False, 0
             glink, lat, lng = "", "", ""
 
             botao_xpath = str_flat('''
@@ -410,42 +362,49 @@ class Imoveis:
             ''')
 
 
-            while not sucesso and tentativa <= 10:
-                pass_cookie(driver)
-                
+            while not sucesso and tentativa <= 14:            
                 try:
-                    driverw.until(
-                        EC.element_to_be_clickable((By.XPATH, botao_xpath))
-                    ).click()
+                    driver.find_element(By.XPATH, botao_xpath).click()
+                    self.log.debug(f"parse_imovel: {session_id}: {url}: abriu o mapa")
+                except:
+                    self.log.debug(f"parse_imovel: {session_id}: {url}: não conseguiu abrir o mapa")
 
-                    iframe = driverw.until(
-                        EC.element_to_be_clickable((By.XPATH, glink_iframe_xpath))
-                    )
-
+                try:
+                    iframe = driver.find_element(By.XPATH, glink_iframe_xpath)
                     driver.switch_to.frame(iframe)
+                    self.log.debug(f"parse_imovel: {session_id}: {url}: entrou no iframe")
+                except:
+                    self.log.debug(f"parse_imovel: {session_id}: {url}: não conseguiu entrar no iframe")
 
-                    glink = driverw.until(
-                        EC.visibility_of_element_located((By.XPATH, glink_xpath))
-                    ).get_attribute("href")
-
+                try:
+                    glink = driver.find_element(By.XPATH, glink_xpath).get_attribute("href")
                     latlng = re.findall("(.\d{2}\.\d{4,6})", glink)
                     lat, lng = float(latlng[0]), float(latlng[1])
                     sucesso = True
-
-                except Exception as e:
+                except:
+                    pass
+                
+                if not sucesso:
                     tentativa += 1
-                    self.log.info(f"parse_imovel: {session_id}: {url}: tentativa {tentativa}")
-                    get_sleep(driver, url, 10)
-
-                finally:
+                    self.log.warning(f"parse_imovel: {session_id}: {url}: não conseguiu pegar latlong na tentativa {tentativa}")
                     driver.switch_to.default_content()
+                    driver.switch_to.window(driver.window_handles[0])
 
-            if not sucesso:
+                if tentativa % 5 == 0:
+                    get_sleep(driver, url, 5)
+                    pass_cookie(driver)
+
+            if sucesso:
+                self.log.debug(f"parse_imovel: {session_id}: {url}: latlong OK")
+            else:
                 self.log.warning(f"parse_imovel: {session_id}: {url}: latlong não encontrada")
 
+            origem = "zap" if "zap" in url else "vivareal"
+
             line = {
-                "id": id_,
-                "origem": "zap" if "zap" in url else "vivareal",
+                "extraido": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                "id": origem + "_" + id_,
+                "origem": origem,
                 "tipo": "Aluguel" if "ALUG" in tipo.upper() else "Compra",
                 "metragem": metragem,
                 "quartos": quartos,

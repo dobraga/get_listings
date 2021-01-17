@@ -1,25 +1,24 @@
 if __name__ == "__main__":
+    from aluguel.util.context import Selenoid, timeit
     from aluguel.data.preprocess import preprocess
+    from aluguel.util.config import Configurations
     from aluguel.fetcher.metro import MetroSpyder
     from aluguel.fetcher.imoveis import Imoveis
-    from aluguel.util.config import Configurations
     from aluguel.util.log import Logger
-    from aluguel.util.context import Selenoid, timeit
     from time import sleep
     
-    log = Logger("aluguel")
     conf = Configurations()
-
+    MetroSpyder(conf).run()
+    log = Logger("aluguel")
 
     try:
         with Selenoid(log):
-            # MetroSpyder(conf).run()
             imovel = Imoveis(conf, log)
 
             while True:
-                with timeit(log, "Processo finalizado em {delta} segundos"):
+                with timeit(log, "Processo finalizado em {delta} segundos\n"):
                     imovel.run()
-                    preprocess()
+                    preprocess(conf)
 
                 sleep(1*60*60) # Buscar dados novos a cada uma hora
 
@@ -28,4 +27,3 @@ if __name__ == "__main__":
 
     except Exception as e:
         log.error(f"Proceso finalizado com erro: {str(e)}\n")
-

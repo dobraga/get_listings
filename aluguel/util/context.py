@@ -1,6 +1,5 @@
 import os
 import requests
-from math import log
 from time import time
 from . import str_flat
 from selenium.webdriver import Remote
@@ -22,7 +21,7 @@ class timeit():
 class RemoteLogger():
     def __init__(
         self, config:dict, log, what:str = None,
-        url:str = None, implicitly_wait:int = 30
+        url:str = None, implicitly_wait:int = 45
     ):
         self.log = log
         self.driver = Remote(**config)
