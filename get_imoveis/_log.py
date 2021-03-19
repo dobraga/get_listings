@@ -2,9 +2,10 @@ import sys
 import logging
 from os.path import join, dirname, abspath
 
-basedir = abspath(join(dirname(__file__), "..", ".."))
+basedir = abspath(join(dirname(__file__), ".."))
 
-def Logger(file_name:str, level:str="INFO") -> logging.Logger:
+
+def Logger(file_name: str, level: str = "INFO") -> logging.Logger:
     """
     Classe utilizada para criar o Log
     """
@@ -32,11 +33,8 @@ def Logger(file_name:str, level:str="INFO") -> logging.Logger:
     log_obj = logging.getLogger()
     log_obj.setLevel(level)
 
-    screen_handler = logging.StreamHandler(
-        stream=sys.stdout
-    )
+    screen_handler = logging.StreamHandler(stream=sys.stdout)
     screen_handler.setFormatter(formatter)
     logging.getLogger().addHandler(screen_handler)
 
     return log_obj
-

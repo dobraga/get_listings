@@ -1,11 +1,12 @@
 import os
 from time import time
 from . import str_flat
-from selenium.webdriver import Remote
 from ..fetcher.aux import get_sleep
+from selenium.webdriver import Remote
 
-class timeit():
-    def __init__(self, log, msg:str):
+
+class timeit:
+    def __init__(self, log, msg: str):
         self.log = log
         self.msg = msg
 
@@ -14,14 +15,17 @@ class timeit():
 
     def __exit__(self, *args):
         fim = time()
-        self.log.info(self.msg.format(delta = (fim - self.ini)))
+        self.log.info(self.msg.format(delta=(fim - self.ini)))
 
 
-
-class RemoteLogger():
+class RemoteLogger:
     def __init__(
-        self, config:dict, log, what:str = None,
-        url:str = None, implicitly_wait:int = 45
+        self,
+        config: dict,
+        log,
+        what: str = None,
+        url: str = None,
+        implicitly_wait: int = 45,
     ):
         self.log = log
         self.driver = Remote(**config)
@@ -38,10 +42,8 @@ class RemoteLogger():
         if url:
             get_sleep(self.driver, url)
 
-
     def __enter__(self):
         return self.driver
-
 
     def __exit__(self, type, value, traceback):
         self.driver.quit()
@@ -54,17 +56,16 @@ class RemoteLogger():
         return True
 
 
-
-class Selenoid():
+class Selenoid:
     def __init__(self, log):
         self.log = log
 
     def __enter__(self):
-        os.system("docker-compose -f \"docker-compose.yml\" up -d --build")
+        os.system("docker pull selenoid/firefox:84.0")
+        os.system('docker-compose -f "docker-compose.yml" up -d --build')
         self.log.info("Selenoid iniciou com sucesso")
         return self
 
     def __exit__(self, *args):
-        os.system("docker-compose -f \"docker-compose.yml\" down")
+        os.system('docker-compose -f "docker-compose.yml" down')
         self.log.info("Selenoid parou com sucesso")
-
