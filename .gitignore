@@ -213,3 +213,4 @@ vignettes/*.pdf
 *.pkl
 *.mp4
 *.log
+*.pqt
