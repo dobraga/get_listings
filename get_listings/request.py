@@ -1,9 +1,12 @@
+import logging
 import requests
 import jsonlines
-from tqdm import tqdm
 from math import ceil
+from os import remove
 from time import sleep
-from os.path import join
+from os.path import join, exists
+
+log = logging.getLogger(__name__)
 
 headers = {
     "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36",
@@ -29,7 +32,7 @@ class Request:
         origin: str,
         conf: dict,
         size: int = 24,
-        out_file: str = "imoveis.jsonlines",
+        out_file: str = "listings.jsonlines",
     ) -> None:
         query_location = conf["local"]
         business_type = conf["tipo_contrato"]
@@ -56,6 +59,9 @@ class Request:
         self.listing_type = listing_type
         self.pages = pages
         self.size = size
+
+        if exists(self.out_file):
+            remove(self.out_file)
 
         self.set_location()
         self.get_listings()
@@ -114,16 +120,16 @@ class Request:
         max_page = ceil(total_listings / query["size"])
         self.pages = max_page if self.pages == -1 else self.pages
 
-        for page in tqdm(range(self.pages), desc=self.site):
+        for page in range(self.pages):
             query["from"] = page * query["size"]
 
             listings = requests.get(base_url, params=query, headers=headers).json()
             listings = listings["search"]["result"]["listings"]
 
             with jsonlines.open(self.out_file, mode="a") as file:
-                for listing in listings:
-                    listing["page"] = page
-                    file.write(listing)
+                file.write_all(listings)
+
+            log.info(f"Busca da página {page}/{max_page} do site {base_url} ok")
 
             sleep(0.1)
 

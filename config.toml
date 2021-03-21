@@ -4,6 +4,7 @@ site = ["zapimoveis", "vivareal"]
 local = "tijuca"
 max_page = -1
 postition_loc = 0
+max_amenities = 10
 
 tipo_contrato = "RENTAL"
 tipo_propriedade = "USED"

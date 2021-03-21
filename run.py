@@ -1,12 +1,13 @@
 if __name__ == "__main__":
-    from get_imoveis.data.preprocess import preprocess
-    from get_imoveis._config import Configurations
-    from get_imoveis.metro import MetroSpyder
-    from get_imoveis.request import run_request
-    from get_imoveis._log import Logger
+    from get_listings._config import Configurations
+    from get_listings.preprocess import preprocess
+    from get_listings.request import run_request
+    from get_listings.metro import MetroSpyder
+    from get_listings._log import setup_logger
 
+    setup_logger()
     conf = Configurations()
-    log = Logger("get_imoveis.log")
 
-    MetroSpyder(conf).run()
     run_request(conf)
+    MetroSpyder(conf).run()
+    preprocess(conf)

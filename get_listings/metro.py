@@ -2,6 +2,11 @@ from scrapy.crawler import CrawlerProcess
 from scrapy import Spider, Request
 from os.path import join, exists
 from os import remove
+import logging
+
+logging.getLogger("scrapy").setLevel(logging.WARNING)
+logging.getLogger("scrapy").propagate = False
+log = logging.getLogger(__name__)
 
 
 class MetroSpyder(Spider):
@@ -12,7 +17,6 @@ class MetroSpyder(Spider):
         self.conf = conf
         self.allowed_domains = ["pt.wikipedia.org", "tools.wmflabs.org"]
         self.start_urls = conf["urls_metro_trem"]
-
         self.file = join(conf["dir_input"], "metro.jsonlines")
 
     def run(self):
@@ -79,3 +83,5 @@ class MetroSpyder(Spider):
             "lat": float(latlng[0]),
             "lng": float(latlng[1]),
         }
+
+        log.info(f'Busca "{linha}/{estacao}" ok')
