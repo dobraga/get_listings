@@ -119,6 +119,8 @@ def preprocess(conf, file="listings.jsonlines", file_metro="metro.jsonlines"):
         .apply(pd.Series)
     )
 
+    df = df.set_index(["id", "portal", "link_href"])
+
     df.to_parquet(join(conf["dir_output"], "listings.parquet"))
 
     log.info("Preprocessamento finalizado")
