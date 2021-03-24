@@ -33,15 +33,18 @@ class Request:
         conf: dict,
         size: int = 24,
         out_file: str = "listings.jsonlines",
+        query_location: str = None,
+        business_type: str = None,
+        listing_type: str = None,
     ) -> None:
-        query_location = conf["local"]
-        business_type = conf["tipo_contrato"]
-        listing_type = conf["tipo_propriedade"]
+        self.query_location = query_location or conf["local"]
+        self.business_type = business_type or conf["tipo_contrato"]
+        self.listing_type = listing_type or conf["tipo_propriedade"]
         pages = conf["max_page"]
 
         assert origin in ["zapimoveis", "vivareal"]
-        assert business_type in ["RENTAL", "SALE"]
-        assert listing_type in ["USED", "DEVELOPMENT"]
+        assert self.business_type in ["RENTAL", "SALE"]
+        assert self.listing_type in ["USED", "DEVELOPMENT"]
 
         self.origin = origin
         self.site = confs[origin]["site"]
@@ -54,9 +57,6 @@ class Request:
 
         self.out_file = join(conf["dir_input"], out_file)
         self.position = conf.get("postition_loc", None)
-        self.query_location = query_location
-        self.business_type = business_type
-        self.listing_type = listing_type
         self.pages = pages
         self.size = size
 

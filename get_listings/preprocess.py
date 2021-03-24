@@ -44,15 +44,15 @@ def preprocess(conf, file="listings.jsonlines", file_metro="metro.jsonlines"):
     )
     df.loc[:, "created_at"] = pd.to_datetime(df.listing_createdAt)
     df.loc[:, "updated_at"] = pd.to_datetime(df.listing_updatedAt)
-    df.loc[:, "usable_area"] = df.listing_usableAreas.str[0]
-    df.loc[:, "floors"] = df.listing_floors.str[0]
-    df.loc[:, "units_on_the_floor"] = df.listing_unitsOnTheFloor
-    df.loc[:, "unit_floor"] = df.listing_unitFloor
+    df.loc[:, "usable_area"] = df.listing_usableAreas.str[0].astype(int)
+    df.loc[:, "floors"] = df.listing_floors.str[0].fillna(-1).astype(int)
+    df.loc[:, "units_on_the_floor"] = df.listing_unitsOnTheFloor.fillna(-1).astype(int)
+    df.loc[:, "unit_floor"] = df.listing_unitFloor.fillna(-1).astype(int)
     df.loc[:, "type_unit"] = df.listing_unitTypes.str[0]
-    df.loc[:, "bedrooms"] = df.listing_bedrooms.str[0]
-    df.loc[:, "bathrooms"] = df.listing_bathrooms.str[0]
-    df.loc[:, "suites"] = df.listing_suites.str[0]
-    df.loc[:, "parking_spaces"] = df.listing_parkingSpaces.str[0].fillna(0)
+    df.loc[:, "bedrooms"] = df.listing_bedrooms.str[0].astype(int)
+    df.loc[:, "bathrooms"] = df.listing_bathrooms.str[0].astype(int)
+    df.loc[:, "suites"] = df.listing_suites.str[0].fillna(0).astype(int)
+    df.loc[:, "parking_spaces"] = df.listing_parkingSpaces.str[0].fillna(0).astype(int)
 
     df = pd.concat(
         [
@@ -73,11 +73,17 @@ def preprocess(conf, file="listings.jsonlines", file_metro="metro.jsonlines"):
         axis=1,
     ).assign(total_fee=lambda x: x["price"] + x["condo_fee"])
 
+    fl_zap = df["listing_portal"] == "GRUPOZAP"
+    df.loc[fl_zap, "origin"] = "zapimoveis"
+    df.loc[~fl_zap, "origin"] = "vivareal"
+
+    df.loc[:, "url"] = df[["origin", "link_href"]].apply(
+        lambda x: "https://www.{}.com.br{}".format(*x), axis=1
+    )
+
     df = df[
         [
-            "listing_id",
-            "listing_portal",
-            "link_href",
+            "url",
             "listing_title",
             "listing_description",
             "listing_publicationType",
@@ -119,8 +125,6 @@ def preprocess(conf, file="listings.jsonlines", file_metro="metro.jsonlines"):
         .apply(pd.Series)
     )
 
-    df = df.set_index(["id", "portal", "link_href"])
-
-    df.to_parquet(join(conf["dir_output"], "listings.parquet"))
+    df.set_index(["url"]).to_parquet(join(conf["dir_output"], "listings.parquet"))
 
     log.info("Preprocessamento finalizado")
