@@ -4,7 +4,7 @@ Esse app tem como objetivo capturar dados do ZapImoveis e Vivareal em um único 
 
 ## Configuração
 
-Para configurar a extração, basta modificar o arquivo `./config/config.toml`.
+Para configurar a extração, basta modificar o arquivo `./config.toml`.
 
 
 ## Execução
