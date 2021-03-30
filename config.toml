@@ -1,0 +1,15 @@
+title = "ConfigFile"
+
+site = ["zapimoveis", "vivareal"]
+local = "tijuca"
+max_page = -1
+postition_loc = 0
+max_amenities = 10
+
+tipo_contrato = "RENTAL"
+tipo_propriedade = "USED"
+
+urls_metro_trem = [
+    "https://pt.wikipedia.org/wiki/Metr%C3%B4_do_Rio_de_Janeiro",
+    "https://pt.wikipedia.org/wiki/SuperVia",
+]

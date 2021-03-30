@@ -1,36 +1,32 @@
-if __name__ == "__main__":
-    from aluguel.util.context import Selenoid, timeit
-    from aluguel.data.preprocess import preprocess
-    from aluguel.util.config import Configurations
-    from aluguel.fetcher.metro import MetroSpyder
-    from aluguel.fetcher.imoveis import Imoveis
-    from aluguel.util import remove_files
-    from aluguel.util.log import Logger
-    from time import sleep
-    
+from get_listings._config import Configurations
+from get_listings.preprocess import preprocess
+from get_listings.request import run_request
+from get_listings.metro import MetroSpyder
+from get_listings._log import setup_logger
+from get_listings.model import run_model
+from os.path import join
+import pandas as pd
+
+local = "tijuca"
+
+
+def run(local=None):
+    setup_logger()
     conf = Configurations()
-    log_file = "aluguel.log"
 
-    MetroSpyder(conf).run()
+    data, local, local_file, new_file = run_request(conf, local)
 
-    remove_files("./logs", [log_file])
-    remove_files("./video")
+    if new_file:
+        # MetroSpyder(conf).run()
+        df = preprocess(conf, data)
+        df = run_model(df, local_file)
+    else:
+        df = pd.read_parquet(
+            local_file.replace(".jsonl", ".parquet").replace("input", "output")
+        )
 
-    log = Logger(log_file)
+    return df, local
 
-    try:
-        with Selenoid(log):
-            imovel = Imoveis(conf, log)
 
-            while True:
-                with timeit(log, "Processo finalizado em {delta} segundos\n"):
-                    imovel.run()
-                    preprocess(conf)
-
-                sleep(1*60*60) # Buscar dados novos a cada uma hora
-
-    except KeyboardInterrupt:
-        log.warning("Processo cancelado\n")
-
-    except Exception as e:
-        log.error(f"Proceso finalizado com erro: {str(e)}\n")
+if __name__ == "__main__":
+    run()
