@@ -1,9 +1,0 @@
-version: "3"
-services:
-
-  shiny:
-    build:
-      context: .
-      dockerfile: dash.dockerfile
-    ports:
-      - "3838:3838"
