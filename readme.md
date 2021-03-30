@@ -43,6 +43,6 @@ Por exemplo, para listar todos os imoveis da tijuca, pode acessar: http://127.0.
 
 Para acessar o mapa, podemos usar: http://127.0.0.1:5000/map?local=tijuca
 
-Podemos também realizar alguns filtros como por exemplo: http://127.0.0.1:5000/map?local=tijuca&query=total_fee%3C=2500+and+bedrooms%3E=2
+Podemos também realizar alguns filtros como por exemplo: http://127.0.0.1:5000/map?local=tijuca&query=total_fee<=2500+and+bedrooms==2
 
 
