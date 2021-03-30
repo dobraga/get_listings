@@ -4,7 +4,6 @@ from sklearn.metrics import (
     mean_squared_error as mse,
 )
 from sklearn.model_selection import KFold
-from os.path import join
 import lightgbm as lgb
 import pandas as pd
 import numpy as np
@@ -41,11 +40,11 @@ class Model:
         return y_predict
 
 
-def run_model(conf):
-    df = pd.read_parquet(join(conf["dir_output"], "listings.parquet"))
+def run_model(df, local_file):
     y = df.total_fee.values
     X = df.drop(
         columns=[
+            "url",
             "title",
             "description",
             "media",
@@ -67,4 +66,6 @@ def run_model(conf):
         error=lambda x: x["total_fee"] - x["pred"],
     ).sort_values("error", ascending=True)
 
-    df.to_parquet(join(conf["dir_output"], "listings_modeled.parquet"))
+    df.to_parquet(local_file.replace(".jsonl", ".parquet").replace("input", "output"))
+
+    return df

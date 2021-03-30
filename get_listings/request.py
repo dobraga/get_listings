@@ -2,9 +2,12 @@ import logging
 import requests
 import jsonlines
 from math import ceil
-from os import remove
 from time import sleep
-from os.path import join, exists
+from copy import deepcopy
+from datetime import datetime, timedelta
+from os.path import exists, join, getmtime
+
+# from concurrent.futures import ProcessPoolExecutor, as_completed
 
 log = logging.getLogger(__name__)
 
@@ -32,7 +35,6 @@ class Request:
         origin: str,
         conf: dict,
         size: int = 24,
-        out_file: str = "listings.jsonlines",
         query_location: str = None,
         business_type: str = None,
         listing_type: str = None,
@@ -40,6 +42,7 @@ class Request:
         self.query_location = query_location or conf["local"]
         self.business_type = business_type or conf["tipo_contrato"]
         self.listing_type = listing_type or conf["tipo_propriedade"]
+        self.path = conf["dir_input"]
         pages = conf["max_page"]
 
         assert origin in ["zapimoveis", "vivareal"]
@@ -55,16 +58,11 @@ class Request:
         self.headers["origin"] = f"https://www.{self.origin}.com.br"
         self.headers["x-domain"] = f"www.{self.origin}.com.br"
 
-        self.out_file = join(conf["dir_input"], out_file)
         self.position = conf.get("postition_loc", None)
         self.pages = pages
         self.size = size
 
-        if exists(self.out_file):
-            remove(self.out_file)
-
         self.set_location()
-        self.get_listings()
 
     def set_location(self) -> None:
         base_url = f"https://{self.site}/v3/locations"
@@ -78,26 +76,53 @@ class Request:
             "size": "6",
         }
 
-        locations = requests.get(base_url, params=query, headers=headers).json()
-        locations = locations["neighborhood"]["result"]["locations"]
+        try:
+            r = requests.get(base_url, params=query, headers=self.headers)
+            r.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            log.error(e)
+            raise e
 
-        print(
-            f"{self.portal}\n\n",
-            "\n".join(
+        locations = r.json()["neighborhood"]["result"]["locations"]
+
+        position = self.position
+        if position is None:
+            print("Select location: ")
+            position = int(input())
+
+        log.info(
+            f"{self.portal}\n\n"
+            + "\n".join(
                 [
-                    f"{i}: {local['address']['locationId']} "
+                    f"{i}: {local['address']['locationId']} {'<-' if i == position else ''}"
                     for i, local in enumerate(locations)
                 ]
-            ),
-            "\n\nSelect location: ",
-            end="",
+            )
         )
-
-        position = self.position if self.position is not None else int(input())
 
         self.local = locations[position]["address"]
 
-    def get_listings(self) -> None:
+        self.filename = self.local["locationId"].replace(" ", "_").replace(">", "_")
+        self.filename = join(self.path, self.filename + ".jsonl")
+
+    def get_listings(self) -> list:
+
+        self.new_file = True
+
+        if exists(self.filename):
+            modification_datetime = datetime.fromtimestamp(getmtime(self.filename))
+            threshold_time = datetime.now() - timedelta(minutes=30)
+
+            if threshold_time < modification_datetime:
+                log.info(f"Reading '{self.filename}'")
+                self.new_file = False
+                with jsonlines.open(self.filename) as reader:
+                    return [obj for obj in reader]
+            else:
+                log.info(
+                    f"Not reading '{self.filename}' because modification is in {str(modification_datetime)}"
+                )
+
         base_url = f"https://{self.site}/v2/listings"
 
         query = {
@@ -116,24 +141,38 @@ class Request:
         }
 
         listings = requests.get(base_url, params=query, headers=headers).json()
-        total_listings = listings["search"]["totalCount"]
-        max_page = ceil(total_listings / query["size"])
-        self.pages = max_page if self.pages == -1 else self.pages
 
-        for page in range(self.pages):
-            query["from"] = page * query["size"]
+        pages = self.pages
+        if pages == -1:
+            total_listings = listings["search"]["totalCount"]
+            pages = ceil(total_listings / query["size"])
 
-            listings = requests.get(base_url, params=query, headers=headers).json()
-            listings = listings["search"]["result"]["listings"]
+        data = []
+        for page in range(pages):
+            query_ = deepcopy(query)
+            query_["from"] = page * query_["size"]
 
-            with jsonlines.open(self.out_file, mode="a") as file:
-                file.write_all(listings)
+            try:
+                r = requests.get(base_url, params=query_, headers=headers)
+                r.raise_for_status()
+            except requests.exceptions.HTTPError as e:
+                log.error(e)
+                raise e
 
-            log.info(f"Busca da página {page}/{max_page} do site {base_url} ok")
+            data += r.json()["search"]["result"]["listings"]
+            sleep(0.01)
 
-            sleep(0.1)
+        return data
 
 
-def run_request(conf: dict):
+def run_request(conf: dict, local: str = None):
+    data: list = []
     for site in conf["site"]:
-        Request(site, conf)
+        req = Request(site, conf, query_location=local)
+        data += req.get_listings()
+
+    log.info(f"Writing file '{req.filename}'")
+    with jsonlines.open(req.filename, mode="w") as writer:
+        writer.write_all(data)
+
+    return data, req.local, req.filename, req.new_file

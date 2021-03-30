@@ -1,7 +1,6 @@
 from geopy.distance import distance
 from os.path import join
 import pandas as pd
-import jsonlines
 import logging
 
 log = logging.getLogger(__name__)
@@ -27,16 +26,11 @@ def get_min_dist(df_metro, lat, lng):
         return ["", "", None]
 
 
-def preprocess(conf, file="listings.jsonlines", file_metro="metro.jsonlines"):
+def preprocess(conf, data, file_metro="metro.jsonlines"):
     log.info("Preprocessamento iniciado")
 
     df_metro = pd.read_json(join(conf["dir_input"], file_metro), lines=True)
     df_metro = df_metro.drop_duplicates()
-
-    data = []
-    with jsonlines.open(join(conf["dir_input"], file)) as reader:
-        for obj in reader:
-            data.append(obj)
 
     df = pd.json_normalize(data, sep="_")
     df.loc[:, "media"] = df.medias.apply(
@@ -45,14 +39,16 @@ def preprocess(conf, file="listings.jsonlines", file_metro="metro.jsonlines"):
     df.loc[:, "created_at"] = pd.to_datetime(df.listing_createdAt)
     df.loc[:, "updated_at"] = pd.to_datetime(df.listing_updatedAt)
     df.loc[:, "usable_area"] = df.listing_usableAreas.str[0].astype(int)
-    df.loc[:, "floors"] = df.listing_floors.str[0].fillna(-1).astype(int)
-    df.loc[:, "units_on_the_floor"] = df.listing_unitsOnTheFloor.fillna(-1).astype(int)
-    df.loc[:, "unit_floor"] = df.listing_unitFloor.fillna(-1).astype(int)
+    df.loc[:, "floors"] = df.listing_floors.str[0].fillna(-1)
+    df.loc[:, "units_on_the_floor"] = df.listing_unitsOnTheFloor.fillna(-1)
+    df.loc[:, "unit_floor"] = df.listing_unitFloor.fillna(-1)
     df.loc[:, "type_unit"] = df.listing_unitTypes.str[0]
-    df.loc[:, "bedrooms"] = df.listing_bedrooms.str[0].astype(int)
-    df.loc[:, "bathrooms"] = df.listing_bathrooms.str[0].astype(int)
-    df.loc[:, "suites"] = df.listing_suites.str[0].fillna(0).astype(int)
-    df.loc[:, "parking_spaces"] = df.listing_parkingSpaces.str[0].fillna(0).astype(int)
+    df.loc[:, "bedrooms"] = df.listing_bedrooms.str[0]
+    df.loc[:, "bathrooms"] = df.listing_bathrooms.str[0]
+    df.loc[:, "suites"] = df.listing_suites.str[0].fillna(0)
+    df.loc[:, "parking_spaces"] = df.listing_parkingSpaces.str[0].fillna(0)
+
+    df = df.dropna(subset=["bedrooms", "bathrooms"])
 
     df = pd.concat(
         [
@@ -125,6 +121,6 @@ def preprocess(conf, file="listings.jsonlines", file_metro="metro.jsonlines"):
         .apply(pd.Series)
     )
 
-    df.set_index(["url"]).to_parquet(join(conf["dir_output"], "listings.parquet"))
-
     log.info("Preprocessamento finalizado")
+
+    return df
