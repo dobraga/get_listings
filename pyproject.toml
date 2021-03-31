@@ -19,6 +19,7 @@ xgboost = "^1.3.3"
 Flask = "^1.1.2"
 Flask-Bootstrap = "^3.3.7"
 folium = "^0.12.1"
+toml = "^0.10.2"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.812"

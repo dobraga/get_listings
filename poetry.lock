@@ -1377,7 +1377,7 @@ python-versions = ">=3.5"
 name = "toml"
 version = "0.10.2"
 description = "Python Library for Tom's Obvious, Minimal Language"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 
@@ -1553,7 +1553,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "12ac2cad48a0afc374425624696e5bd8db99c542d44c0918499ef7dbdb26194b"
+content-hash = "dcab4dec73ca62f63caa6ba548e79758a6a13311546ca1c71bcf637b5a1e11bd"
 
 [metadata.files]
 anyio = [
