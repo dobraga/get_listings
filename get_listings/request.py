@@ -1,4 +1,3 @@
-from concurrent import futures
 import logging
 import requests
 import jsonlines
