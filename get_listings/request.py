@@ -1,3 +1,4 @@
+from concurrent import futures
 import logging
 import requests
 import jsonlines
@@ -6,6 +7,7 @@ from time import sleep
 from copy import deepcopy
 from datetime import datetime
 from os.path import exists, join, getmtime
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 log = logging.getLogger(__name__)
 
@@ -100,18 +102,18 @@ class Request:
         self.filename = self.local["locationId"].replace(" ", "_").replace(">", "_")
         self.filename = join(self.path, self.filename + ".jsonl")
 
-    def get_listings(self) -> list:
+    def get_listings(self) -> tuple:
 
-        self.new_file = True
+        new_file = True
 
         if exists(self.filename):
             modification_datetime = datetime.fromtimestamp(getmtime(self.filename))
 
             if datetime.now().date != modification_datetime.date():
                 log.info(f"Reading '{self.filename}'")
-                self.new_file = False
+                new_file = False
                 with jsonlines.open(self.filename) as reader:
-                    return [obj for obj in reader]
+                    return [obj for obj in reader], new_file
             else:
                 log.info(
                     f"Not reading '{self.filename}' because modification is in {str(modification_datetime)}"
@@ -164,17 +166,29 @@ class Request:
         for d in data:
             d["url"] = self.site + d["link"]["href"]
 
-        return data
+        return data, new_file
 
 
 def run_request(conf: dict, local: str = None):
+    futures: dict = {}
     data: list = []
-    for site in conf["site"].keys():
-        req = Request(site, conf, query_location=local)
-        data += req.get_listings()
+    new_file: bool = False
+
+    with ProcessPoolExecutor() as executor:
+        for site in conf["site"].keys():
+            req = Request(site, conf, query_location=local)
+            futures[executor.submit(req.get_listings)] = req
+
+        for future in as_completed(futures):
+            try:
+                d, n = future.result()
+                new_file = max(new_file, n)
+                data += d
+            except Exception as e:
+                log.error(f"{req.portal}: {e}")
 
     log.info(f"Writing file '{req.filename}'")
     with jsonlines.open(req.filename, mode="w") as writer:
         writer.write_all(data)
 
-    return data, req.local, req.filename, req.new_file
+    return data, req.local, req.filename, new_file

@@ -13,6 +13,6 @@ def Configurations():
     conf["dir_input"] = join(dir_project, "data", "input")
     conf["dir_output"] = join(dir_project, "data", "output")
 
-    log.info("Settings loaded")
+    log.info("\nSettings loaded")
 
     return conf
