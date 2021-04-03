@@ -1,4 +1,5 @@
-from scrapy.crawler import CrawlerProcess
+from scrapy.crawler import CrawlerRunner
+from twisted.internet import reactor
 from scrapy import Spider, Request
 from os.path import join, exists
 from os import remove
@@ -12,29 +13,12 @@ log = logging.getLogger(__name__)
 class MetroSpyder(Spider):
     name = "metro"
 
-    def __init__(self, conf, **kwargs):
+    def __init__(self, conf):
         super().__init__()
         self.conf = conf
         self.allowed_domains = ["pt.wikipedia.org", "tools.wmflabs.org"]
         self.start_urls = conf["urls_metro_trem"]
         self.file = join(conf["dir_input"], "metro.jsonlines")
-
-    def run(self):
-        if exists(self.file):
-            remove(self.file)
-
-        settings = {
-            "FEEDS": {
-                self.file: {
-                    "format": "jsonlines",
-                    "encoding": "utf8",
-                },
-            }
-        }
-
-        crawler_process = CrawlerProcess(settings)
-        crawler_process.crawl(MetroSpyder, conf=self.conf)
-        crawler_process.start()
 
     def parse(self, response):
         base_xpath = (
@@ -85,3 +69,25 @@ class MetroSpyder(Spider):
         }
 
         log.info(f'Busca "{linha}/{estacao}" ok')
+
+
+def run(conf):
+    file = join(conf["dir_input"], "metro.jsonlines")
+
+    if not exists(file):
+        log.info("Getting metro/trem information")
+
+        settings = {
+            "FEEDS": {
+                file: {
+                    "format": "jsonlines",
+                    "encoding": "utf8",
+                },
+            }
+        }
+
+        runner = CrawlerRunner(settings)
+
+        d = runner.crawl(MetroSpyder, conf=conf)
+        d.addBoth(lambda _: reactor.stop())
+        reactor.run()
