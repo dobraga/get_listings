@@ -4,10 +4,7 @@ from get_listings.request import run_request
 from get_listings.metro import MetroSpyder
 from get_listings._log import setup_logger
 from get_listings.model import run_model
-from os.path import join
 import pandas as pd
-
-local = "tijuca"
 
 
 def run(local=None):
