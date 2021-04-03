@@ -33,6 +33,8 @@ def preprocess(conf, data, file_metro="metro.jsonlines"):
     df_metro = df_metro.drop_duplicates()
 
     df = pd.json_normalize(data, sep="_")
+    df = df.groupby(["listing_portal", "link_href"]).head(1)
+
     df.loc[:, "media"] = df.medias.apply(
         lambda x: [i["url"].format(action="fit-in", width=870, height=653) for i in x]
     )
@@ -68,14 +70,6 @@ def preprocess(conf, data, file_metro="metro.jsonlines"):
         ],
         axis=1,
     ).assign(total_fee=lambda x: x["price"] + x["condo_fee"])
-
-    fl_zap = df["listing_portal"] == "GRUPOZAP"
-    df.loc[fl_zap, "origin"] = "zapimoveis"
-    df.loc[~fl_zap, "origin"] = "vivareal"
-
-    df.loc[:, "url"] = df[["origin", "link_href"]].apply(
-        lambda x: "https://www.{}.com.br{}".format(*x), axis=1
-    )
 
     df = df[
         [
