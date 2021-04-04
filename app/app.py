@@ -1,13 +1,10 @@
 from flask import Flask, render_template, request, jsonify
 from folium.plugins import MarkerCluster
-from app.extensions import appearance
 from run import run
 import folium
 import json
 
 app = Flask(__name__)
-
-appearance.init_app(app)
 
 
 @app.route("/")
