@@ -13,3 +13,5 @@ services:
 volumes:
     data: 
         external: true
+    logs: 
+        external: true
