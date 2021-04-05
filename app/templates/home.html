@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <link rel="stylesheet" type= "text/css" href="static/mystyle.css">
+    </head>
+
+    {% block navbar %}
+    <div class="navbar navbar-fixed-top" style="text-align: center;"> 
+        <h1>Valores de imóvel</h1>
+    </div>
+    {% endblock %}
+
+    {% block content %}
+    <body>
+
+        <form action="" method="POST" style="text-align: center;">
+            <br>
+            <div class="form-group">
+                <label>Local:  </label>
+
+                {{ form.local }}
+                {{ form.search }}
+            </div>
+            <br>
+            
+            <div class="form-group">
+                <label>Query: </label>
+                
+                {{ form.query }}
+            </div>
+
+            <br>
+
+            {% for local in locations %}
+
+                {{ form["checkbox" + loop.index0|string] }}
+                {{ local["address"]["locationId"] }}
+                <br>
+
+            {% endfor %}
+
+            <br>
+            
+            {{ form.submit_table }}
+            {{ form.submit_map }}
+        </form>
+
+    </body>
+    {% endblock %}
+
+</html>

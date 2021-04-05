@@ -29,14 +29,11 @@ class Request:
         origin: str,
         conf: dict,
         size: int = 24,
-        query_location: str = None,
         business_type: str = None,
         listing_type: str = None,
     ) -> None:
-        self.query_location = query_location or conf["local"]
         self.business_type = business_type or conf["tipo_contrato"]
         self.listing_type = listing_type or conf["tipo_propriedade"]
-        self.path = conf["dir_input"]
         pages = conf["max_page"]
 
         assert origin in ["zapimoveis", "vivareal"]
@@ -57,76 +54,31 @@ class Request:
         self.pages = pages
         self.size = size
 
-        self.set_location()
+    def get_listings(
+        self, filename, neighborhood, locationId, state, city, zone
+    ) -> tuple:
 
-    def set_location(self) -> None:
-        base_url = f"https://{self.api}/v3/locations"
-
-        query = {
-            "businessType": self.business_type,
-            "listingType": self.listing_type,
-            "q": self.query_location,
-            "fields": "neighborhood",
-            "portal": self.portal,
-            "size": "6",
-        }
-
-        try:
-            r = requests.get(base_url, params=query, headers=self.headers)
-            r.raise_for_status()
-            sleep(0.5)
-        except requests.exceptions.HTTPError as e:
-            log.error(e)
-            raise e
-
-        locations = r.json()["neighborhood"]["result"]["locations"]
-
-        position = self.position
-        if position is None:
-            print("Select location: ")
-            position = int(input())
-
-        log.info(
-            f"{self.portal}\n\n"
-            + "\n".join(
-                [
-                    f"{i}: {local['address']['locationId']} {'<-' if i == position else ''}"
-                    for i, local in enumerate(locations)
-                ]
-            )
-        )
-
-        self.local = locations[position]["address"]
-
-        self.filename = self.local["locationId"].replace(" ", "_").replace(">", "_")
-        self.filename = join(self.path, self.filename + ".jsonl")
-
-    def get_listings(self) -> tuple:
-
-        new_file = True
-
-        if exists(self.filename):
-            modification_datetime = datetime.fromtimestamp(getmtime(self.filename))
+        if exists(filename):
+            modification_datetime = datetime.fromtimestamp(getmtime(filename))
 
             if datetime.now().date != modification_datetime.date():
-                log.info(f"Reading '{self.filename}'")
-                new_file = False
-                with jsonlines.open(self.filename) as reader:
-                    return [obj for obj in reader], new_file
+                log.info(f"Reading '{filename}'")
+                with jsonlines.open(filename) as reader:
+                    return [obj for obj in reader], False
             else:
                 log.info(
-                    f"Not reading '{self.filename}' because modification is in {str(modification_datetime)}"
+                    f"Not reading '{filename}' because modification is in {str(modification_datetime)}"
                 )
 
         base_url = f"https://{self.api}/v2/listings"
 
         query = {
             "includeFields": "search(result(listings(listing(displayAddressType,amenities,usableAreas,constructionStatus,listingType,description,title,createdAt,floors,unitTypes,nonActivationReason,providerId,propertyType,unitSubTypes,unitsOnTheFloor,legacyId,id,portal,unitFloor,parkingSpaces,updatedAt,address,suites,publicationType,externalId,bathrooms,usageTypes,totalAreas,advertiserId,advertiserContact,whatsappNumber,bedrooms,acceptExchange,pricingInfos,showPrice,resale,buildings,capacityLimit,status),account(id,name,logoUrl,licenseNumber,showAddress,legacyVivarealId,legacyZapId,minisite),medias,accountLink,link)),totalCount),expansion(search(result(listings(listing(displayAddressType,amenities,usableAreas,constructionStatus,listingType,description,title,createdAt,floors,unitTypes,nonActivationReason,providerId,propertyType,unitSubTypes,unitsOnTheFloor,legacyId,id,portal,unitFloor,parkingSpaces,updatedAt,address,suites,publicationType,externalId,bathrooms,usageTypes,totalAreas,advertiserId,advertiserContact,whatsappNumber,bedrooms,acceptExchange,pricingInfos,showPrice,resale,buildings,capacityLimit,status),account(id,name,logoUrl,licenseNumber,showAddress,legacyVivarealId,legacyZapId,minisite),medias,accountLink,link)),totalCount)),nearby(search(result(listings(listing(displayAddressType,amenities,usableAreas,constructionStatus,listingType,description,title,createdAt,floors,unitTypes,nonActivationReason,providerId,propertyType,unitSubTypes,unitsOnTheFloor,legacyId,id,portal,unitFloor,parkingSpaces,updatedAt,address,suites,publicationType,externalId,bathrooms,usageTypes,totalAreas,advertiserId,advertiserContact,whatsappNumber,bedrooms,acceptExchange,pricingInfos,showPrice,resale,buildings,capacityLimit,status),account(id,name,logoUrl,licenseNumber,showAddress,legacyVivarealId,legacyZapId,minisite),medias,accountLink,link)),totalCount)),page,fullUriFragments,developments(search(result(listings(listing(displayAddressType,amenities,usableAreas,constructionStatus,listingType,description,title,createdAt,floors,unitTypes,nonActivationReason,providerId,propertyType,unitSubTypes,unitsOnTheFloor,legacyId,id,portal,unitFloor,parkingSpaces,updatedAt,address,suites,publicationType,externalId,bathrooms,usageTypes,totalAreas,advertiserId,advertiserContact,whatsappNumber,bedrooms,acceptExchange,pricingInfos,showPrice,resale,buildings,capacityLimit,status),account(id,name,logoUrl,licenseNumber,showAddress,legacyVivarealId,legacyZapId,minisite),medias,accountLink,link)),totalCount)),superPremium(search(result(listings(listing(displayAddressType,amenities,usableAreas,constructionStatus,listingType,description,title,createdAt,floors,unitTypes,nonActivationReason,providerId,propertyType,unitSubTypes,unitsOnTheFloor,legacyId,id,portal,unitFloor,parkingSpaces,updatedAt,address,suites,publicationType,externalId,bathrooms,usageTypes,totalAreas,advertiserId,advertiserContact,whatsappNumber,bedrooms,acceptExchange,pricingInfos,showPrice,resale,buildings,capacityLimit,status),account(id,name,logoUrl,licenseNumber,showAddress,legacyVivarealId,legacyZapId,minisite),medias,accountLink,link)),totalCount)),owners(search(result(listings(listing(displayAddressType,amenities,usableAreas,constructionStatus,listingType,description,title,createdAt,floors,unitTypes,nonActivationReason,providerId,propertyType,unitSubTypes,unitsOnTheFloor,legacyId,id,portal,unitFloor,parkingSpaces,updatedAt,address,suites,publicationType,externalId,bathrooms,usageTypes,totalAreas,advertiserId,advertiserContact,whatsappNumber,bedrooms,acceptExchange,pricingInfos,showPrice,resale,buildings,capacityLimit,status),account(id,name,logoUrl,licenseNumber,showAddress,legacyVivarealId,legacyZapId,minisite),medias,accountLink,link)),totalCount))",
-            "addressNeighborhood": self.local["neighborhood"],
-            "addressLocationId": self.local["locationId"],
-            "addressState": self.local["state"],
-            "addressCity": self.local["city"],
-            "addressZone": self.local["zone"],
+            "addressNeighborhood": neighborhood,
+            "addressLocationId": locationId,
+            "addressState": state,
+            "addressCity": city,
+            "addressZone": zone,
             "listingType": self.listing_type,
             "business": self.business_type,
             "categoryPage": "RESULT",
@@ -165,18 +117,31 @@ class Request:
         for d in data:
             d["url"] = self.site + d["link"]["href"]
 
-        return data, new_file
+        return data, True
 
 
-def run_request(conf: dict, local: str = None):
+def run_request(conf: dict, neighborhood, locationId, state, city, zone):
     futures: dict = {}
     data: list = []
     new_file: bool = False
 
+    filename = locationId.replace(" ", "_").replace(">", "_")
+    filename = join(conf["dir_input"], filename + ".jsonl")
+
     with ProcessPoolExecutor() as executor:
         for site in conf["site"].keys():
-            req = Request(site, conf, query_location=local)
-            futures[executor.submit(req.get_listings)] = req
+            req = Request(site, conf)
+            futures[
+                executor.submit(
+                    req.get_listings,
+                    filename,
+                    neighborhood,
+                    locationId,
+                    state,
+                    city,
+                    zone,
+                )
+            ] = req
 
         for future in as_completed(futures):
             try:
@@ -186,8 +151,8 @@ def run_request(conf: dict, local: str = None):
             except Exception as e:
                 log.error(f"{req.portal}: {e}")
 
-    log.info(f"Writing file '{req.filename}'")
-    with jsonlines.open(req.filename, mode="w") as writer:
+    log.info(f"Writing file '{filename}'")
+    with jsonlines.open(filename, mode="w") as writer:
         writer.write_all(data)
 
-    return data, req.local, req.filename, new_file
+    return data, filename, new_file

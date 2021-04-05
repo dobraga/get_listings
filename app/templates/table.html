@@ -36,10 +36,8 @@
                 <td> {{row["estacao"]}} </td>
                 <td> {{(row["distance"])|round}} </td>
                 <td> 
-                    <a href={{row["url"]}}>
-                        <div>
-                            {{row["title"]}} 
-                        </div>
+                    <a onclick="window.open('{{row['url']}}');" href='#'>
+                        {{row["title"]}} 
                     </a>
                 </td>
             </tr>
