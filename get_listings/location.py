@@ -42,4 +42,10 @@ def list_locations(conf, local):
         log.error(e)
         raise e
 
-    return r.json()["neighborhood"]["result"]["locations"]
+    locations = r.json()["neighborhood"]["result"]["locations"]
+
+    locations = [l["address"] for l in locations]
+
+    locations = list({v["locationId"]: v for v in locations}.values())
+
+    return locations
