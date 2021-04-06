@@ -70,6 +70,8 @@ class Request:
                     f"Not reading '{filename}' because modification is in {str(modification_datetime)}"
                 )
 
+        log.info(locationId)
+
         base_url = f"https://{self.api}/v2/listings"
 
         query = {
