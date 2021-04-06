@@ -1,7 +1,7 @@
 title = "ConfigFile"
 
 local = "tijuca"
-max_page = 50
+max_page = -1
 postition_loc = 0
 max_amenities = 10
 
