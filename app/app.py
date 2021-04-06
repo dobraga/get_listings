@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify, url_for, redirect
-from wtforms import StringField, SubmitField, BooleanField, RadioField
+from wtforms import StringField, SubmitField, BooleanField
 from wtforms.validators import DataRequired
 from folium.plugins import MarkerCluster
 from flask_wtf import FlaskForm
@@ -53,7 +53,7 @@ def home():
                 ]
             ):
                 if checkbox:
-                    local = locations[i]["address"]
+                    local = locations[i]
 
             if not local:
                 return render_template("home.html", form=form, locations=[])
@@ -71,13 +71,17 @@ def home():
 
 @app.route("/api")
 def api():
-    local = request.args.get("local")
+    neighborhood = request.args.get("neighborhood")
+    locationId = request.args.get("locationId")
+    state = request.args.get("state")
+    city = request.args.get("city")
+    zone = request.args.get("zone")
     query = request.args.get("query")
 
-    if local is None:
+    if locationId is None:
         return "Need a local"
 
-    df, local = run(local)
+    df, _ = run(neighborhood, locationId, state, city, zone)
     app.logger.info(f"Columns: {df.columns.values.tolist()}")
 
     if query:
@@ -103,7 +107,7 @@ def table():
 
     if query:
         df = df.query(query)
-    return render_template("table.html", df=df, local=local)
+    return render_template("table.html", df=df, locationId=locationId)
 
 
 @app.route("/map")
