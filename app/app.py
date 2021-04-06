@@ -146,3 +146,7 @@ def map():
         )
 
     return map._repr_html_()
+
+
+if __name__ == "__main__":
+    app.run()
