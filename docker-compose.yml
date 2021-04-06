@@ -9,9 +9,3 @@ services:
         volumes:
             - "./data:/app/data"
             - "./logs:/app/logs"
-
-volumes:
-    data: 
-        external: true
-    logs: 
-        external: true
