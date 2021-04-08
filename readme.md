@@ -14,6 +14,8 @@ git clone https://github.com/dobraga/get_listings
 cd get_listings
 ```
 
+### Sem Docker
+
 Para instalar os pacotes nescessários, execute:
 
 ```sh
@@ -38,15 +40,8 @@ E depois disso, execute:
 flask run
 ```
 
-## Utilização
+### Com docker
 
-A utilização básica é por meio da rotas: `/table` e `/map`.
-
-Um parâmetro obrigatório é o `local`, também é possível utilizar o parâmetro `query` que é opcional para filtrar os imóveis.
-
-Por exemplo, para listar todos os imoveis da tijuca, pode acessar: http://127.0.0.1:5000/table?local=tijuca
-
-Para acessar o mapa, podemos usar: http://127.0.0.1:5000/map?local=tijuca
-
-Podemos também realizar alguns filtros como por exemplo: http://127.0.0.1:5000/map?local=tijuca&query=total_fee<=2500+and+bedrooms==2
-
+```sh
+docker-compose -f "docker-compose.yml" up -d --build
+```
