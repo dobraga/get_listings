@@ -18,8 +18,6 @@ def run(neighborhood, locationId, state, city, zone):
         conf, neighborhood, locationId, state, city, zone
     )
 
-    log.info(f"{new_file} reusing file")
-
     if new_file:
         metro.run(conf)
         df = preprocess(conf, data)
