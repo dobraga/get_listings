@@ -1,15 +1,13 @@
 from flask import Flask, render_template, request, jsonify, url_for, redirect
 from wtforms import StringField, SubmitField, BooleanField
+from get_listings.location import list_locations
 from wtforms.validators import DataRequired
 from folium.plugins import MarkerCluster
 from flask_wtf import FlaskForm
 from run import run
-from get_listings.location import list_locations
-from get_listings._config import Configurations
 import folium
 import json
 
-conf = Configurations()
 
 app = Flask(__name__)
 
@@ -35,11 +33,11 @@ def home():
 
     if form.validate_on_submit():
         if form.search.data:
-            locations = list_locations(conf, form.local.data)
+            locations = list_locations(form.local.data)
             return render_template("home.html", form=form, locations=locations)
 
         else:
-            locations = list_locations(conf, form.local.data)
+            locations = list_locations(form.local.data)
             local = {}
 
             for i, checkbox in enumerate(
@@ -102,7 +100,7 @@ def table():
     if locationId is None:
         return "Need a local"
 
-    df, local = run(neighborhood, locationId, state, city, zone)
+    df, _ = run(neighborhood, locationId, state, city, zone)
     app.logger.info(f"Columns: {df.columns.values.tolist()}")
 
     if query:
