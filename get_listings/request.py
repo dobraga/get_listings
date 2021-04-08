@@ -10,151 +10,135 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 
 log = logging.getLogger(__name__)
 
-headers = {
-    "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36",
-    "sec-ch-ua": 'Google Chrome";v="89", "Chromium";v="89", ";Not A Brand";v="99"',
-    "accept-language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-    "sec-fetch-site": "same-site",
-    "accept": "application/json",
-    "sec-fetch-dest": "empty",
-    "sec-ch-ua-mobile": "?0",
-    "sec-fetch-mode": "cors",
-    "origin-ua-mobile": "?0",
-}
 
+def request(
+    origin: str,
+    conf: dict,
+    neighborhood,
+    locationId,
+    state,
+    city,
+    zone,
+    size: int = 24,
+    business_type: str = None,
+    listing_type: str = None,
+):
+    business_type = business_type or conf["tipo_contrato"]
+    listing_type = listing_type or conf["tipo_propriedade"]
+    pages = conf["max_page"]
 
-class Request:
-    def __init__(
-        self,
-        origin: str,
-        conf: dict,
-        size: int = 24,
-        business_type: str = None,
-        listing_type: str = None,
-    ) -> None:
-        self.business_type = business_type or conf["tipo_contrato"]
-        self.listing_type = listing_type or conf["tipo_propriedade"]
-        pages = conf["max_page"]
+    assert origin in ["zapimoveis", "vivareal"]
+    assert business_type in ["RENTAL", "SALE"]
+    assert listing_type in ["USED", "DEVELOPMENT"]
 
-        assert origin in ["zapimoveis", "vivareal"]
-        assert self.business_type in ["RENTAL", "SALE"]
-        assert self.listing_type in ["USED", "DEVELOPMENT"]
+    api = conf["site"][origin]["api"]
+    site = conf["site"][origin]["site"]
+    portal = conf["site"][origin]["portal"]
 
-        self.origin = origin
-        self.api = conf["site"][origin]["api"]
-        self.site = conf["site"][origin]["site"]
-        self.portal = conf["site"][origin]["portal"]
+    headers = {
+        "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36",
+        "sec-ch-ua": 'Google Chrome";v="89", "Chromium";v="89", ";Not A Brand";v="99"',
+        "accept-language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+        "sec-fetch-site": "same-site",
+        "accept": "application/json",
+        "sec-fetch-dest": "empty",
+        "sec-ch-ua-mobile": "?0",
+        "sec-fetch-mode": "cors",
+        "origin-ua-mobile": "?0",
+    }
 
-        self.headers = headers
-        self.headers["referer"] = f"https://www.{self.origin}.com.br"
-        self.headers["origin"] = f"https://www.{self.origin}.com.br"
-        self.headers["x-domain"] = f"www.{self.origin}.com.br"
+    headers["referer"] = f"https://www.{origin}.com.br"
+    headers["origin"] = f"https://www.{origin}.com.br"
+    headers["x-domain"] = f"www.{origin}.com.br"
 
-        self.position = conf.get("postition_loc", None)
-        self.pages = pages
-        self.size = size
+    base_url = f"https://{api}/v2/listings"
 
-    def get_listings(
-        self, filename, neighborhood, locationId, state, city, zone
-    ) -> tuple:
+    query = {
+        "includeFields": "search(result(listings(listing(displayAddressType,amenities,usableAreas,constructionStatus,listingType,description,title,createdAt,floors,unitTypes,nonActivationReason,providerId,propertyType,unitSubTypes,unitsOnTheFloor,legacyId,id,portal,unitFloor,parkingSpaces,updatedAt,address,suites,publicationType,externalId,bathrooms,usageTypes,totalAreas,advertiserId,advertiserContact,whatsappNumber,bedrooms,acceptExchange,pricingInfos,showPrice,resale,buildings,capacityLimit,status),account(id,name,logoUrl,licenseNumber,showAddress,legacyVivarealId,legacyZapId,minisite),medias,accountLink,link)),totalCount),expansion(search(result(listings(listing(displayAddressType,amenities,usableAreas,constructionStatus,listingType,description,title,createdAt,floors,unitTypes,nonActivationReason,providerId,propertyType,unitSubTypes,unitsOnTheFloor,legacyId,id,portal,unitFloor,parkingSpaces,updatedAt,address,suites,publicationType,externalId,bathrooms,usageTypes,totalAreas,advertiserId,advertiserContact,whatsappNumber,bedrooms,acceptExchange,pricingInfos,showPrice,resale,buildings,capacityLimit,status),account(id,name,logoUrl,licenseNumber,showAddress,legacyVivarealId,legacyZapId,minisite),medias,accountLink,link)),totalCount)),nearby(search(result(listings(listing(displayAddressType,amenities,usableAreas,constructionStatus,listingType,description,title,createdAt,floors,unitTypes,nonActivationReason,providerId,propertyType,unitSubTypes,unitsOnTheFloor,legacyId,id,portal,unitFloor,parkingSpaces,updatedAt,address,suites,publicationType,externalId,bathrooms,usageTypes,totalAreas,advertiserId,advertiserContact,whatsappNumber,bedrooms,acceptExchange,pricingInfos,showPrice,resale,buildings,capacityLimit,status),account(id,name,logoUrl,licenseNumber,showAddress,legacyVivarealId,legacyZapId,minisite),medias,accountLink,link)),totalCount)),page,fullUriFragments,developments(search(result(listings(listing(displayAddressType,amenities,usableAreas,constructionStatus,listingType,description,title,createdAt,floors,unitTypes,nonActivationReason,providerId,propertyType,unitSubTypes,unitsOnTheFloor,legacyId,id,portal,unitFloor,parkingSpaces,updatedAt,address,suites,publicationType,externalId,bathrooms,usageTypes,totalAreas,advertiserId,advertiserContact,whatsappNumber,bedrooms,acceptExchange,pricingInfos,showPrice,resale,buildings,capacityLimit,status),account(id,name,logoUrl,licenseNumber,showAddress,legacyVivarealId,legacyZapId,minisite),medias,accountLink,link)),totalCount)),superPremium(search(result(listings(listing(displayAddressType,amenities,usableAreas,constructionStatus,listingType,description,title,createdAt,floors,unitTypes,nonActivationReason,providerId,propertyType,unitSubTypes,unitsOnTheFloor,legacyId,id,portal,unitFloor,parkingSpaces,updatedAt,address,suites,publicationType,externalId,bathrooms,usageTypes,totalAreas,advertiserId,advertiserContact,whatsappNumber,bedrooms,acceptExchange,pricingInfos,showPrice,resale,buildings,capacityLimit,status),account(id,name,logoUrl,licenseNumber,showAddress,legacyVivarealId,legacyZapId,minisite),medias,accountLink,link)),totalCount)),owners(search(result(listings(listing(displayAddressType,amenities,usableAreas,constructionStatus,listingType,description,title,createdAt,floors,unitTypes,nonActivationReason,providerId,propertyType,unitSubTypes,unitsOnTheFloor,legacyId,id,portal,unitFloor,parkingSpaces,updatedAt,address,suites,publicationType,externalId,bathrooms,usageTypes,totalAreas,advertiserId,advertiserContact,whatsappNumber,bedrooms,acceptExchange,pricingInfos,showPrice,resale,buildings,capacityLimit,status),account(id,name,logoUrl,licenseNumber,showAddress,legacyVivarealId,legacyZapId,minisite),medias,accountLink,link)),totalCount))",
+        "addressNeighborhood": neighborhood,
+        "addressLocationId": locationId,
+        "addressState": state,
+        "addressCity": city,
+        "addressZone": zone,
+        "listingType": listing_type,
+        "business": business_type,
+        "categoryPage": "RESULT",
+        "usageTypes": "RESIDENTIAL",
+        "size": size,
+        "from": 24,
+    }
 
-        if exists(filename):
-            modification_datetime = datetime.fromtimestamp(getmtime(filename))
+    listings = requests.get(base_url, params=query, headers=headers).json()
 
-            if datetime.now().date != modification_datetime.date():
-                log.info(f"Reading '{filename}'")
-                with jsonlines.open(filename) as reader:
-                    return [obj for obj in reader], False
-            else:
-                log.info(
-                    f"Not reading '{filename}' because modification is in {str(modification_datetime)}"
-                )
+    total_listings = listings["search"]["totalCount"]
+    max_page = ceil(total_listings / query["size"])
+    log.info(f"Total listings: {total_listings} and max pages: {max_page}")
+    pages = min(pages, max_page)
+    if pages == -1:
+        pages = max_page
+    log.info(f"Getting {pages} pages")
 
-        log.info(locationId)
+    data = []
+    for page in range(pages):
+        query["from"] = page * query["size"]
 
-        base_url = f"https://{self.api}/v2/listings"
+        try:
+            r = requests.get(base_url, params=query, headers=headers)
+            r.raise_for_status()
+            log.info(f"Getting page {page+1}/{pages} from {portal} OK")
+        except requests.exceptions.HTTPError as e:
+            log.error(f"Getting page {page+1}/{pages} from {portal}: {e}")
+            raise e
 
-        query = {
-            "includeFields": "search(result(listings(listing(displayAddressType,amenities,usableAreas,constructionStatus,listingType,description,title,createdAt,floors,unitTypes,nonActivationReason,providerId,propertyType,unitSubTypes,unitsOnTheFloor,legacyId,id,portal,unitFloor,parkingSpaces,updatedAt,address,suites,publicationType,externalId,bathrooms,usageTypes,totalAreas,advertiserId,advertiserContact,whatsappNumber,bedrooms,acceptExchange,pricingInfos,showPrice,resale,buildings,capacityLimit,status),account(id,name,logoUrl,licenseNumber,showAddress,legacyVivarealId,legacyZapId,minisite),medias,accountLink,link)),totalCount),expansion(search(result(listings(listing(displayAddressType,amenities,usableAreas,constructionStatus,listingType,description,title,createdAt,floors,unitTypes,nonActivationReason,providerId,propertyType,unitSubTypes,unitsOnTheFloor,legacyId,id,portal,unitFloor,parkingSpaces,updatedAt,address,suites,publicationType,externalId,bathrooms,usageTypes,totalAreas,advertiserId,advertiserContact,whatsappNumber,bedrooms,acceptExchange,pricingInfos,showPrice,resale,buildings,capacityLimit,status),account(id,name,logoUrl,licenseNumber,showAddress,legacyVivarealId,legacyZapId,minisite),medias,accountLink,link)),totalCount)),nearby(search(result(listings(listing(displayAddressType,amenities,usableAreas,constructionStatus,listingType,description,title,createdAt,floors,unitTypes,nonActivationReason,providerId,propertyType,unitSubTypes,unitsOnTheFloor,legacyId,id,portal,unitFloor,parkingSpaces,updatedAt,address,suites,publicationType,externalId,bathrooms,usageTypes,totalAreas,advertiserId,advertiserContact,whatsappNumber,bedrooms,acceptExchange,pricingInfos,showPrice,resale,buildings,capacityLimit,status),account(id,name,logoUrl,licenseNumber,showAddress,legacyVivarealId,legacyZapId,minisite),medias,accountLink,link)),totalCount)),page,fullUriFragments,developments(search(result(listings(listing(displayAddressType,amenities,usableAreas,constructionStatus,listingType,description,title,createdAt,floors,unitTypes,nonActivationReason,providerId,propertyType,unitSubTypes,unitsOnTheFloor,legacyId,id,portal,unitFloor,parkingSpaces,updatedAt,address,suites,publicationType,externalId,bathrooms,usageTypes,totalAreas,advertiserId,advertiserContact,whatsappNumber,bedrooms,acceptExchange,pricingInfos,showPrice,resale,buildings,capacityLimit,status),account(id,name,logoUrl,licenseNumber,showAddress,legacyVivarealId,legacyZapId,minisite),medias,accountLink,link)),totalCount)),superPremium(search(result(listings(listing(displayAddressType,amenities,usableAreas,constructionStatus,listingType,description,title,createdAt,floors,unitTypes,nonActivationReason,providerId,propertyType,unitSubTypes,unitsOnTheFloor,legacyId,id,portal,unitFloor,parkingSpaces,updatedAt,address,suites,publicationType,externalId,bathrooms,usageTypes,totalAreas,advertiserId,advertiserContact,whatsappNumber,bedrooms,acceptExchange,pricingInfos,showPrice,resale,buildings,capacityLimit,status),account(id,name,logoUrl,licenseNumber,showAddress,legacyVivarealId,legacyZapId,minisite),medias,accountLink,link)),totalCount)),owners(search(result(listings(listing(displayAddressType,amenities,usableAreas,constructionStatus,listingType,description,title,createdAt,floors,unitTypes,nonActivationReason,providerId,propertyType,unitSubTypes,unitsOnTheFloor,legacyId,id,portal,unitFloor,parkingSpaces,updatedAt,address,suites,publicationType,externalId,bathrooms,usageTypes,totalAreas,advertiserId,advertiserContact,whatsappNumber,bedrooms,acceptExchange,pricingInfos,showPrice,resale,buildings,capacityLimit,status),account(id,name,logoUrl,licenseNumber,showAddress,legacyVivarealId,legacyZapId,minisite),medias,accountLink,link)),totalCount))",
-            "addressNeighborhood": neighborhood,
-            "addressLocationId": locationId,
-            "addressState": state,
-            "addressCity": city,
-            "addressZone": zone,
-            "listingType": self.listing_type,
-            "business": self.business_type,
-            "categoryPage": "RESULT",
-            "usageTypes": "RESIDENTIAL",
-            "size": 24,
-            "from": 24,
-        }
+        data += r.json()["search"]["result"]["listings"]
+        sleep(0.05)
 
-        listings = requests.get(base_url, params=query, headers=headers).json()
+    for d in data:
+        d["url"] = site + d["link"]["href"]
 
-        pages = self.pages
-        total_listings = listings["search"]["totalCount"]
-        max_page = ceil(total_listings / query["size"])
-        log.info(f"Max pages: {max_page}")
-        pages = min(pages, max_page)
-        if pages == -1:
-            pages = max_page
-        log.info(f"Getting {pages} pages")
-
-        data = []
-        for page in range(pages):
-            query_ = deepcopy(query)
-            query_["from"] = page * query_["size"]
-
-            try:
-                r = requests.get(base_url, params=query_, headers=headers)
-                r.raise_for_status()
-                log.info(f"Getting page {page+1}/{pages} from {self.portal} OK")
-            except requests.exceptions.HTTPError as e:
-                log.error(f"Getting page {page+1}/{pages} from {self.portal}: {e}")
-                raise e
-
-            data += r.json()["search"]["result"]["listings"]
-            sleep(0.05)
-
-        for d in data:
-            d["url"] = self.site + d["link"]["href"]
-
-        return data, True
+    return data
 
 
 def run_request(conf: dict, neighborhood, locationId, state, city, zone):
-    futures: dict = {}
-    data: list = []
-    new_file: bool = False
+    log.info(" | ".join([neighborhood, locationId, state, city, zone]))
 
+    data: list = []
     filename = locationId.replace(" ", "_").replace(">", "_")
     filename = join(conf["dir_input"], filename + ".jsonl")
 
+    if exists(filename):
+        modification_datetime = datetime.fromtimestamp(getmtime(filename))
+
+        if datetime.now().date != modification_datetime.date():
+            log.info(f"Reading '{filename}'")
+            with jsonlines.open(filename) as reader:
+                return [obj for obj in reader], filename, False
+
     with ProcessPoolExecutor() as executor:
         for site in conf["site"].keys():
-            req = Request(site, conf)
-            futures[
+            futures = {
                 executor.submit(
-                    req.get_listings,
-                    filename,
+                    request,
+                    site,
+                    conf,
                     neighborhood,
                     locationId,
                     state,
                     city,
                     zone,
-                )
-            ] = req
+                ): site
+            }
 
         for future in as_completed(futures):
+            site = futures[future]
             try:
-                d, n = future.result()
-                new_file = max(new_file, n)
-                data += d
+                data += future.result()
             except Exception as e:
-                log.error(f"{req.portal}: {e}")
+                log.error(f"{site}: {e}")
 
     log.info(f"Writing file '{filename}'")
-    with jsonlines.open(filename, mode="w") as writer:
-        writer.write_all(data)
+    if data:
+        with jsonlines.open(filename, mode="w") as writer:
+            writer.write_all(data)
 
-    return data, filename, new_file
+    return data, filename, True
