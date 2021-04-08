@@ -1,5 +1,6 @@
 import logging
 import requests
+from get_listings._config import Configurations
 
 log = logging.getLogger(__name__)
 
@@ -18,7 +19,8 @@ headers = {
 }
 
 
-def list_locations(conf, local):
+def list_locations(local, conf=None):
+    conf = conf or Configurations()
     api = conf["site"][origin]["api"]
     portal = conf["site"][origin]["portal"]
 
