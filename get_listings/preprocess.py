@@ -1,5 +1,5 @@
 from geopy.distance import distance
-from os.path import join
+from os.path import join, isfile
 import pandas as pd
 import logging
 
@@ -29,7 +29,12 @@ def get_min_dist(df_metro, lat, lng):
 def preprocess(conf, data, file_metro="metro.jsonlines"):
     log.info("Preprocessamento iniciado")
 
-    df_metro = pd.read_json(join(conf["dir_input"], file_metro), lines=True)
+    file = join(conf["dir_input"], file_metro)
+
+    if not isfile(file):
+        return pd.DataFrame()
+
+    df_metro = pd.read_json(file, lines=True)
     df_metro = df_metro.drop_duplicates()
 
     df = pd.json_normalize(data, sep="_")

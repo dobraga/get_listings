@@ -10,12 +10,12 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def run(neighborhood, locationId, state, city, zone):
+def run(neighborhood, locationId, state, city, zone, business_type, listing_type):
     setup_logger()
     conf = Configurations()
 
     data, local_file, new_file = run_request(
-        conf, neighborhood, locationId, state, city, zone
+        conf, neighborhood, locationId, state, city, zone, business_type, listing_type
     )
 
     if new_file:

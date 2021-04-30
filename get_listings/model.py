@@ -41,6 +41,9 @@ class Model:
 
 
 def run_model(df, local_file):
+    if df.shape[0] == 0:
+        return df
+
     y = df.total_fee.values
     X = df.drop(
         columns=[

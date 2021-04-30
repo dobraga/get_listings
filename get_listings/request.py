@@ -3,7 +3,6 @@ import requests
 import jsonlines
 from math import ceil
 from time import sleep
-from copy import deepcopy
 from datetime import datetime
 from os.path import exists, join, getmtime
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -19,18 +18,15 @@ def request(
     state,
     city,
     zone,
-    size: int = 24,
     business_type: str = None,
     listing_type: str = None,
+    size: int = 24,
 ):
-    business_type = business_type or conf["tipo_contrato"]
-    listing_type = listing_type or conf["tipo_propriedade"]
-    pages = conf["max_page"]
-
     assert origin in ["zapimoveis", "vivareal"]
     assert business_type in ["RENTAL", "SALE"]
     assert listing_type in ["USED", "DEVELOPMENT"]
 
+    pages = conf["max_page"]
     api = conf["site"][origin]["api"]
     site = conf["site"][origin]["site"]
     portal = conf["site"][origin]["portal"]
@@ -99,11 +95,18 @@ def request(
     return data
 
 
-def run_request(conf: dict, neighborhood, locationId, state, city, zone):
-    log.info(" | ".join([neighborhood, locationId, state, city, zone]))
+def run_request(
+    conf: dict, neighborhood, locationId, state, city, zone, business_type, listing_type
+):
+    log.info(
+        " | ".join(
+            [business_type, listing_type, neighborhood, locationId, state, city, zone]
+        )
+    )
 
     data: list = []
     filename = locationId.replace(" ", "_").replace(">", "_")
+    filename = f"{business_type}_{listing_type}_{filename}"
     filename = join(conf["dir_input"], filename + ".jsonl")
 
     if exists(filename):
@@ -126,6 +129,8 @@ def run_request(conf: dict, neighborhood, locationId, state, city, zone):
                     state,
                     city,
                     zone,
+                    business_type,
+                    listing_type,
                 ): site
             }
 
@@ -136,8 +141,8 @@ def run_request(conf: dict, neighborhood, locationId, state, city, zone):
             except Exception as e:
                 log.error(f"{site}: {e}")
 
-    log.info(f"Writing file '{filename}'")
     if data:
+        log.info(f"Writing file '{filename}'")
         with jsonlines.open(filename, mode="w") as writer:
             writer.write_all(data)
 

@@ -11,11 +11,15 @@ def init_app(app):
         city = request.args.get("city")
         zone = request.args.get("zone")
         query = request.args.get("query")
+        tp_contrato = request.args.get("tp_contrato")
+        tp_listings = request.args.get("tp_listings")
 
         if locationId is None:
             return "Need a local"
 
-        df, _ = run(neighborhood, locationId, state, city, zone)
+        df, _ = run(
+            neighborhood, locationId, state, city, zone, tp_contrato, tp_listings
+        )
         app.logger.info(f"Columns: {df.columns.values.tolist()}")
 
         if query:
