@@ -112,7 +112,7 @@ def run_request(
     if exists(filename):
         modification_datetime = datetime.fromtimestamp(getmtime(filename))
 
-        if datetime.now().date != modification_datetime.date():
+        if datetime.now().date == modification_datetime.date():
             log.info(f"Reading '{filename}'")
             with jsonlines.open(filename) as reader:
                 return [obj for obj in reader], filename, False
