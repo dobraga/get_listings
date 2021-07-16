@@ -215,3 +215,4 @@ vignettes/*.pdf
 *.mp4
 *.log
 *.parquet
+migrations/
