@@ -1,8 +1,9 @@
-from run import run
-
 import folium
 from flask import request
 from folium.plugins import MarkerCluster
+
+from listings.backend.listings import get_listings
+from listings.backend.metro import get_metro
 
 
 def init_app(app):
@@ -16,19 +17,29 @@ def init_app(app):
         query = request.args.get("query")
         tp_contrato = request.args.get("tp_contrato")
         tp_listings = request.args.get("tp_listings")
+        state = request.args["stateAcronym"]
 
         if locationId is None:
             return "Need a local"
 
-        df, _ = run(
-            neighborhood, locationId, state, city, zone, tp_contrato, tp_listings
+        df = get_listings(
+            neighborhood,
+            locationId,
+            state,
+            city,
+            zone,
+            tp_contrato,
+            tp_listings,
+            get_metro(state),
         )
-        df = df.dropna(subset=["point_lat"])
+
+        df = df.dropna(subset=["address_lat"])
+        print(query)
         if query:
             df = df.query(query)
 
         map = folium.Map(
-            location=df[["point_lat", "point_lon"]].mean().values,
+            location=df[["address_lat", "address_lon"]].mean().values,
             height="85%",
             tiles="http://mt.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
             attr="toner-bcg",
@@ -40,7 +51,7 @@ def init_app(app):
             html = f"<a onclick=\"window.open('{row['url']}');\" href='#'> {row['title']} </a>"
 
             folium.Marker(
-                location=[row["point_lat"], row["point_lon"]], popup=html
+                location=[row["address_lat"], row["address_lon"]], popup=html
             ).add_to(marker_cluster)
 
         return map._repr_html_()

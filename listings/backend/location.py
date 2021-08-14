@@ -1,6 +1,7 @@
 import logging
 import requests
-from get_listings._config import Configurations
+from flask import current_app
+
 
 log = logging.getLogger(__name__)
 
@@ -19,10 +20,10 @@ headers = {
 }
 
 
-def list_locations(local, conf=None):
-    conf = conf or Configurations()
-    api = conf["site"][origin]["api"]
-    portal = conf["site"][origin]["portal"]
+def list_locations(local: str) -> dict:
+    conf = current_app.config
+    api = conf["sites"][origin]["api"]
+    portal = conf["sites"][origin]["portal"]
 
     headers["referer"] = f"https://www.{origin}.com.br"
     headers["origin"] = f"https://www.{origin}.com.br"
@@ -48,6 +49,25 @@ def list_locations(local, conf=None):
 
     locations = [l["address"] for l in locations]
 
-    locations = list({v["locationId"]: v for v in locations}.values())
+    locations = {v["locationId"] + f">{v['stateAcronym']}": v for v in locations}
+
+    def set_name(key: str) -> str:
+        splitted = key.split(">")
+        return f"{splitted[-2]}, {splitted[3]} - {splitted[-1]}"
+
+    def get_keys(
+        d: dict,
+        keys: list = [
+            "city",
+            "stateAcronym",
+            "zone",
+            "locationId",
+            "state",
+            "neighborhood",
+        ],
+    ) -> dict:
+        return {k: v for k, v in d.items() if k in keys}
+
+    locations = {set_name(k): get_keys(v) for k, v in locations.items()}
 
     return locations

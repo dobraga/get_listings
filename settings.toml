@@ -10,6 +10,11 @@ max_amenities = 10
         "https://pt.wikipedia.org/wiki/SuperVia",
     ]
 
+[default.metro_trem.sp]
+    urls = [
+        "https://pt.wikipedia.org/wiki/Metr%C3%B4_de_S%C3%A3o_Paulo",
+    ]
+
 [default.sites]
     [default.sites.vivareal]
         site = "https://www.vivareal.com.br"
@@ -24,7 +29,7 @@ max_amenities = 10
 
 [development]
 DEBUG = true
-max_page = 2
+max_page = -1   
 SQLALCHEMY_DATABASE_URI  = 'postgresql://postgres:postgres@localhost:15432/listing'
 SECRET_KEY = "5e2b552d-b1d8-489e-9547-2f3475b9ee12"
 

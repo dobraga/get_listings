@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block content %}
+<form action="" method="POST">
+    <div class="row">
+        <div class="col">
+            <label for="tp_contrato">Tipo de contrato</label>
+            <select class="form-control" name="tp_contrato" id="tp_contrato">
+                {% for tp in depara_tp_contrato.keys() %}
+                    <option>{{tp}}</option>
+                {% endfor %}
+            </select>
+        </div>
+    
+        <div class="col">
+            <label for="tp_listings">Tipo de propriedade</label>
+            <select class="form-control" name="tp_listings" id="tp_listings">
+                {% for tp in depara_tp_listings.keys() %}
+                <option>{{tp}}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="py-5">
+        <div class="row">
+            <label for="local">Localização</label>
+            <div class="col-9">
+                <input required type="text" class="form-control" placeholder="Local" id="local" name="local" value="{{local}}">
+            </div>
+            <div class="col">
+                <button class="btn btn-primary" type="submit" name="procurar">Procurar</button>
+            </div>
+        </div>
+    
+        {% if locations %}
+            <div class="pt-3">
+                <select class="form-control" name="selected_local" id="selected_local">
+                    {% for local in locations.keys() %}
+                        <option>{{ local }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        {% endif %}
+    </div>
+
+
+    <input type="text" class="form-control" placeholder="Query" name="query">
+
+    <br>
+
+    <h4> Principais features a serem filtradas: </h4>
+    
+    <ul>
+        <li> bedrooms: Quantidade de quartos </li>
+        <li> bathrooms: Quantidade de banheiros </li>
+        <li> price: Preço </li>
+        <li> condo_fee: Preço do condominio </li>
+        <li> total_fee: Preço total </li>
+        <li> distance: Distância até o metrô </li>
+        <li> usable_area: Área útil do apartamento </li>
+    </ul>
+    
+    exemplo de query: bedrooms>=2 and total_fee <= 2500
+
+    <div class="py-5 col-6 mx-auto">
+        <div class="btn-group">
+            <button type="submit" class='btn btn-primary' name="submit-table">
+                Tabela
+            </button>
+    
+            <button type="submit" class="btn btn-primary" name="submit-map">
+                Mapa
+            </button>
+        </div>
+    </div>
+
+</form>
+{% endblock %}

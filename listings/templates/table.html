@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- <h1>Valores de imóvel - {{locationId}}</h1> -->
+
+<table style="width:100%" class="table">
+    <tr>
+        <th>Título</th>
+        <th>Custo</th>
+        <th>Condominio</th>
+        <th>Total</th>
+        {% if "pred" in df.columns %}
+            <th>Preço Predito</th>
+        {% endif %}
+        <th>Estação</th>
+        {% if "distance" in df.columns %}
+            <th>Dist. Metro</th>
+        {% endif %}
+    </tr>
+    
+    {% for index, row in df.iterrows() %}
+    <tr>
+        <td> 
+            <a href='{{row.url}}'>
+                {{row["title"][:50]}}
+            </a>
+        </td>
+
+        <td> {{row["price"]}} </td>
+        <td> {{row["condo_fee"]}} </td>
+        <td> {{row["total_fee"]}} </td>
+        {% if "pred" in df.columns %}
+            <td> {{(row["pred"])|round|int}} </td>
+        {% endif %}
+        <td> {{row["estacao"]}} </td>
+        
+        {% if "distance" in df.columns %}
+            <td> {{(row["distance"])|round}} </td>
+        {% endif %}
+
+    </tr>
+    {% endfor %}
+    
+</table>
+
+{% endblock %}

@@ -40,7 +40,7 @@ class Model:
         return y_predict
 
 
-def run_model(df, local_file):
+def run_model(df):
     if df.shape[0] == 0:
         return df
 
@@ -68,7 +68,5 @@ def run_model(df, local_file):
         pred=Model(lgb.LGBMRegressor()).fit_predict(X, y),
         error=lambda x: x["total_fee"] - x["pred"],
     ).sort_values("error", ascending=True)
-
-    df.to_parquet(local_file.replace(".jsonl", ".parquet").replace("input", "output"))
 
     return df
