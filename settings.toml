@@ -29,12 +29,10 @@ max_amenities = 10
 
 [development]
 DEBUG = true
-max_page = -1   
+max_page = 2
 SQLALCHEMY_DATABASE_URI  = 'postgresql://postgres:postgres@localhost:15432/listing'
-SECRET_KEY = "5e2b552d-b1d8-489e-9547-2f3475b9ee12"
 
 [production]
 DEBUG = false
 max_page = -1
 SQLALCHEMY_DATABASE_URI  = 'postgresql://postgres:postgres@db:15432/listing'
-SECRET_KEY = "83457483jsg83275-87345"
