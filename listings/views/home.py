@@ -26,19 +26,18 @@ def init_app(app):
                 tp_listings = depara_tp_listings[tp_listings]
                 selected_local = locations[selected_local]
 
+                url = url_for(
+                    "map",
+                    local=local,
+                    query=query,
+                    tp_contrato=tp_contrato,
+                    tp_listings=tp_listings,
+                    **selected_local
+                )
+
                 if "submit-table" in request.form.keys():
                     url = url_for(
                         "table",
-                        local=local,
-                        query=query,
-                        tp_contrato=tp_contrato,
-                        tp_listings=tp_listings,
-                        **selected_local
-                    )
-
-                elif "submit-map" in request.form.keys():
-                    url = url_for(
-                        "map",
                         local=local,
                         query=query,
                         tp_contrato=tp_contrato,
