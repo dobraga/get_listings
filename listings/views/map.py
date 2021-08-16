@@ -34,7 +34,6 @@ def init_app(app):
         )
 
         df = df.dropna(subset=["address_lat"])
-        print(query)
         if query:
             df = df.query(query)
 
