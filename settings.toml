@@ -35,4 +35,4 @@ SQLALCHEMY_DATABASE_URI  = 'postgresql://postgres:postgres@localhost:15432/listi
 [production]
 DEBUG = false
 max_page = -1
-SQLALCHEMY_DATABASE_URI  = 'postgresql://postgres:postgres@db:15432/listing'
+SQLALCHEMY_DATABASE_URI  = 'postgresql://postgres:postgres@db:5432/listing'
