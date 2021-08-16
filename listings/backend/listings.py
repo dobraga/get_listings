@@ -89,7 +89,7 @@ def _request(
             try:
                 r = requests.get(base_url, params=query, headers=headers)
                 r.raise_for_status()
-                current_app.logger.debug(
+                current_app.logger.info(
                     f"Getting page {page+1}/{pages} from {portal} OK"
                 )
                 data += r.json()["search"]["result"]["listings"]
