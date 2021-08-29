@@ -230,7 +230,11 @@ def get_listings(
                 imovel = Imovel.query.filter_by(url=url).first()
 
                 if imovel:
-                    if imovel.updated_date != p["updatedAt"]:
+                    if imovel.updated_date.date() != p["updatedAt"].date():
+                        current_app.logger.debug(
+                            f"updating {url} because {imovel.updated_date.date()} != {p['updatedAt'].date()}"
+                        )
+
                         imovel.raw = d
                         imovel.title = p["title"]
                         imovel.usable_area = p["usable_area"]
