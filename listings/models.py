@@ -44,6 +44,8 @@ class Imovel(db.Model):
     created_date = db.Column(db.DateTime(timezone=False))
     updated_date = db.Column(db.DateTime(timezone=False))
 
+    total_fee_predict = db.Column(db.Float())
+
 
 class ImovelAtivo(db.Model):
     __tablename__ = "imovel_ativo"
