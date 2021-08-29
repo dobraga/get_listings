@@ -4,9 +4,10 @@ from math import ceil
 from time import sleep
 from datetime import datetime
 from flask import current_app
+from joblib import Parallel, delayed
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-
+from listings.backend.model import predict
 from listings.models import Imovel, ImovelAtivo
 from listings.backend.preprocess import preprocess
 from listings.extensions.serializer import ImovelSchema
@@ -21,11 +22,10 @@ def _request(
     state,
     city,
     zone,
-    df_metro: pd.DataFrame,
     business_type: str = None,
     listing_type: str = None,
     size: int = 24,
-) -> list:
+) -> tuple:
     """
     Request all pages for one site
     """
@@ -35,6 +35,8 @@ def _request(
     api = conf["sites"][origin]["api"]
     site = conf["sites"][origin]["site"]
     portal = conf["sites"][origin]["portal"]
+
+    current_app.logger.info(f"Buscando dados do {portal}")
 
     headers = {
         "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
@@ -64,7 +66,6 @@ def _request(
         "business": business_type,
         "usageTypes": "RESIDENTIAL",
         "categoryPage": "RESULT",
-        "sort": "updatedAt DESC",
         "size": size,
         "from": 24,
     }
@@ -84,9 +85,8 @@ def _request(
 
         data = []
         for page in range(pages):
-            query["from"] = page * query["size"]
-
             try:
+                query["from"] = page * query["size"]
                 r = requests.get(base_url, params=query, headers=headers)
                 r.raise_for_status()
                 current_app.logger.info(
@@ -100,18 +100,17 @@ def _request(
                     f"Getting page {page+1}/{pages} from {portal}: {e}"
                 )
 
-        new_data = []
-        for d in data:
-            d["url"] = site + d["link"]["href"]
-            processed_data = preprocess(d, business_type, df_metro)
-            new_data.append((d, processed_data))
+        current_app.logger.info(f"Busca dos dados do {portal} foi finalizada")
 
-        return new_data
+        return site, data
 
     raise Exception(listings)
 
 
 def get_activated_listings(locationId, business_type, listing_type):
+
+    current_app.logger.info("Iniciando busca dos dados atualizados")
+
     imoveis = current_app.db.engine.execute(
         f"""
         SELECT i.*
@@ -125,18 +124,46 @@ def get_activated_listings(locationId, business_type, listing_type):
     """
     ).all()
 
+    current_app.logger.info("Busca dos dados atualizados concluída")
+
     return pd.DataFrame(IS.dump(imoveis))
 
 
+def update_predict(locationId, business_type, listing_type) -> None:
+    current_app.logger.info("Atualizando previsão de preços")
+
+    imoveis = current_app.db.engine.execute(
+        f"""
+        SELECT *
+        FROM imovel
+        WHERE
+            listing_type = '{listing_type}'
+            and business_type = '{business_type}'
+            and location_id = '{locationId}'
+    """
+    ).all()
+
+    df = pd.DataFrame(IS.dump(imoveis))
+    df["pred"] = predict(df)
+
+    for _, (url, pred) in df[["url", "pred"]].iterrows():
+        print(url, pred)
+        current_app.logger.debug(f"Atualizando a previsão de '{url}' para {pred}")
+        Imovel.query.filter_by(url=url).first().total_fee_predict = pred
+
+    current_app.logger.info("Atualização da previsão de preços finalizada")
+
+
 def get_listings(
-    neighborhood,
-    locationId,
-    state,
-    city,
-    zone,
-    business_type,
-    listing_type,
+    neighborhood: str,
+    locationId: str,
+    state: str,
+    city: str,
+    zone: str,
+    business_type: str,
+    listing_type: str,
     df_metro: pd.DataFrame,
+    force_update: bool = False,
 ) -> pd.DataFrame:
 
     # Para dados que já foram atualizados no dia da consulta, apenas retorna os dados
@@ -151,16 +178,31 @@ def get_listings(
         """
     ).scalar()
 
-    current_app.logger.info(
-        f"{business_type=}, {listing_type=}, {neighborhood=},  {locationId=},  {state=},  {city=},  {zone=}, {last_update=}"
-    )
-
     # Caso ja tenha dados atualizados do dia corrente
-    if last_update and last_update.date() == datetime.today().date():
+    if (
+        not force_update
+        and last_update
+        and last_update.date() == datetime.today().date()
+    ):
+        current_app.logger.info(
+            f"Reusando dados extraídos -> {business_type=}, {listing_type=}, {neighborhood=},  {locationId=},  {state=},  {city=},  {zone=}, {last_update=}"
+        )
         return get_activated_listings(locationId, business_type, listing_type)
 
+    current_app.logger.info(
+        f"Extraindo novos dados -> {business_type=}, {listing_type=}, {neighborhood=},  {locationId=},  {state=},  {city=},  {zone=}, {last_update=}"
+    )
+
     # Caso contrário, limpa dados dos imoveis ativos e realiza a busca dos imoveis
-    ImovelAtivo.query.delete()
+    current_app.db.engine.execute(
+        f"""
+        DELETE FROM imovel_ativo
+        WHERE
+            listing_type = '{listing_type}'
+            and business_type = '{business_type}'
+            and location_id = '{locationId}'
+        """
+    )
 
     with ProcessPoolExecutor() as executor:
         futures = {
@@ -174,80 +216,92 @@ def get_listings(
                 zone=zone,
                 business_type=business_type,
                 listing_type=listing_type,
-                df_metro=df_metro,
             ): site
             for site in current_app.config["sites"].keys()
         }
 
-    for future in as_completed(futures):
-        for d, p in future.result():
-            imovel = Imovel.query.filter_by(url=d["url"]).first()
+        def prep(x):
+            return preprocess(x, business_type=business_type, df_metro=df_metro)
 
-            if imovel:
-                if imovel.updated_date != p["updatedAt"]:
-                    imovel.raw = d
-                    imovel.title = p["title"]
-                    imovel.usable_area = p["usable_area"]
-                    imovel.floors = p["floors"]
-                    imovel.type_unit = p["type_unit"]
-                    imovel.bedrooms = p["bedrooms"]
-                    imovel.bathrooms = p["bathrooms"]
-                    imovel.suites = p["suites"]
-                    imovel.parking_spaces = p["parking_spaces"]
-                    imovel.amenities = p["amenities"]
-                    imovel.address_lat = p["address_lat"]
-                    imovel.address_lon = p["address_lon"]
-                    imovel.price = p["price"]
-                    imovel.condo_fee = p["condo_fee"]
-                    imovel.total_fee = p["total_fee"]
-                    imovel.linha = p["linha"]
-                    imovel.estacao = p["estacao"]
-                    imovel.distance = p["distance"]
-                    imovel.updated_date = p["updatedAt"]
+        for future in as_completed(futures):
+            site, data = future.result()
+            for d, p in Parallel()(delayed(prep)(d) for d in data):
+                url = site + d["link"]["href"]
+                imovel = Imovel.query.filter_by(url=url).first()
 
-            else:
-                imovel = Imovel(
-                    url=d["url"],
-                    neighborhood=neighborhood,
-                    location_id=locationId,
-                    state=state,
-                    city=city,
-                    zone=zone,
-                    business_type=business_type,
-                    listing_type=listing_type,
-                    raw=d,
-                    title=p["title"],
-                    usable_area=p["usable_area"],
-                    floors=p["floors"],
-                    type_unit=p["type_unit"],
-                    bedrooms=p["bedrooms"],
-                    bathrooms=p["bathrooms"],
-                    suites=p["suites"],
-                    parking_spaces=p["parking_spaces"],
-                    amenities=p["amenities"],
-                    address_lat=p["address_lat"],
-                    address_lon=p["address_lon"],
-                    price=p["price"],
-                    condo_fee=p["condo_fee"],
-                    total_fee=p["total_fee"],
-                    linha=p["linha"],
-                    estacao=p["estacao"],
-                    distance=p["distance"],
-                    created_date=p["createdAt"],
-                    updated_date=p["updatedAt"],
-                )
-                current_app.db.session.add(imovel)
+                if imovel:
+                    if imovel.updated_date != p["updatedAt"]:
+                        imovel.raw = d
+                        imovel.title = p["title"]
+                        imovel.usable_area = p["usable_area"]
+                        imovel.floors = p["floors"]
+                        imovel.type_unit = p["type_unit"]
+                        imovel.bedrooms = p["bedrooms"]
+                        imovel.bathrooms = p["bathrooms"]
+                        imovel.suites = p["suites"]
+                        imovel.parking_spaces = p["parking_spaces"]
+                        imovel.amenities = p["amenities"]
+                        imovel.address_lat = p["address_lat"]
+                        imovel.address_lon = p["address_lon"]
+                        imovel.price = p["price"]
+                        imovel.condo_fee = p["condo_fee"]
+                        imovel.total_fee = p["total_fee"]
+                        imovel.linha = p["linha"]
+                        imovel.estacao = p["estacao"]
+                        imovel.distance = p["distance"]
+                        imovel.updated_date = p["updatedAt"]
 
-            imovel_ativo = ImovelAtivo.query.filter_by(url=d["url"]).first()
-            if not imovel_ativo:
-                imovel_ativo = ImovelAtivo(
-                    url=d["url"],
-                    location_id=locationId,
-                    business_type=business_type,
-                    listing_type=listing_type,
-                )
-                current_app.db.session.add(imovel_ativo)
+                        current_app.logger.debug(f"updated {url}")
+                    else:
+                        current_app.logger.debug(f"not updated {url}")
+
+                else:
+                    imovel = Imovel(
+                        url=url,
+                        neighborhood=neighborhood,
+                        location_id=locationId,
+                        state=state,
+                        city=city,
+                        zone=zone,
+                        business_type=business_type,
+                        listing_type=listing_type,
+                        raw=d,
+                        title=p["title"],
+                        usable_area=p["usable_area"],
+                        floors=p["floors"],
+                        type_unit=p["type_unit"],
+                        bedrooms=p["bedrooms"],
+                        bathrooms=p["bathrooms"],
+                        suites=p["suites"],
+                        parking_spaces=p["parking_spaces"],
+                        amenities=p["amenities"],
+                        address_lat=p["address_lat"],
+                        address_lon=p["address_lon"],
+                        price=p["price"],
+                        condo_fee=p["condo_fee"],
+                        total_fee=p["total_fee"],
+                        linha=p["linha"],
+                        estacao=p["estacao"],
+                        distance=p["distance"],
+                        created_date=p["createdAt"],
+                        updated_date=p["updatedAt"],
+                    )
+                    current_app.db.session.add(imovel)
+                    current_app.logger.debug(f"created {url}")
+
+                if not ImovelAtivo.query.filter_by(url=url).first():
+                    imovel_ativo = ImovelAtivo(
+                        url=url,
+                        location_id=locationId,
+                        business_type=business_type,
+                        listing_type=listing_type,
+                    )
+                    current_app.db.session.add(imovel_ativo)
+
+    update_predict(locationId, business_type, listing_type)
 
     current_app.db.session.commit()
 
-    return get_activated_listings(locationId, business_type, listing_type)
+    df = get_activated_listings(locationId, business_type, listing_type)
+
+    return df
