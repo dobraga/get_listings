@@ -29,6 +29,7 @@ def init_app(app):
             tp_contrato,
             tp_listings,
             get_metro(state),
+            app.config["force_update"],
         )
 
         if query:
