@@ -216,3 +216,4 @@ vignettes/*.pdf
 *.log
 *.parquet
 migrations/
+*.db
