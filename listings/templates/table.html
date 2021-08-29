@@ -9,7 +9,7 @@
         <th>Custo</th>
         <th>Condominio</th>
         <th>Total</th>
-        {% if "pred" in df.columns %}
+        {% if "total_fee_predict" in df.columns %}
             <th>Preço Predito</th>
         {% endif %}
         <th>Estação</th>
@@ -29,8 +29,8 @@
         <td> {{row["price"]}} </td>
         <td> {{row["condo_fee"]}} </td>
         <td> {{row["total_fee"]}} </td>
-        {% if "pred" in df.columns %}
-            <td> {{(row["pred"])|round|int}} </td>
+        {% if "total_fee_predict" in df.columns %}
+            <td> {{(row["total_fee_predict"])|round|int}} </td>
         {% endif %}
         <td> {{row["estacao"]}} </td>
         
