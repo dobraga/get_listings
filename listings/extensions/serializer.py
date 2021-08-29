@@ -43,6 +43,9 @@ class ImovelSchema(SQLAlchemyAutoSchema):
             "created_date",
             "estacao",
             "distance",
+            "created_date",
+            "updated_date",
+            "total_fee_predict",
         )
 
 
