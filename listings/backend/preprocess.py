@@ -37,58 +37,57 @@ def to_numeric(value):
 
 def preprocess(
     data: dict, business_type: str = None, df_metro: pd.DataFrame = pd.DataFrame()
-) -> dict:
+) -> tuple:
     parsed_columns = {}
 
     listing = data["listing"]
 
-    if business_type is not None:
-        parsed_columns["title"] = listing["title"] or listing["description"][:40]
-        parsed_columns["amenities"] = listing["amenities"]
-        parsed_columns["usable_area"] = to_numeric(listing["usableAreas"])
-        parsed_columns["floors"] = to_numeric(listing["floors"]) or 0
-        parsed_columns["units_on_the_floor"] = to_numeric(listing["unitsOnTheFloor"])
-        parsed_columns["unit_floor"] = to_numeric(listing["unitFloor"])
-        parsed_columns["type_unit"] = listing["unitTypes"][0]
-        parsed_columns["bedrooms"] = to_numeric(listing["bedrooms"])
-        parsed_columns["bathrooms"] = to_numeric(listing["bathrooms"])
-        parsed_columns["suites"] = to_numeric(listing["suites"]) or 0
-        parsed_columns["parking_spaces"] = to_numeric(listing["parkingSpaces"]) or 0
+    parsed_columns["title"] = listing["title"] or listing["description"][:40]
+    parsed_columns["amenities"] = listing["amenities"]
+    parsed_columns["usable_area"] = to_numeric(listing["usableAreas"])
+    parsed_columns["floors"] = to_numeric(listing["floors"]) or 0
+    parsed_columns["units_on_the_floor"] = to_numeric(listing["unitsOnTheFloor"])
+    parsed_columns["unit_floor"] = to_numeric(listing["unitFloor"])
+    parsed_columns["type_unit"] = listing["unitTypes"][0]
+    parsed_columns["bedrooms"] = to_numeric(listing["bedrooms"])
+    parsed_columns["bathrooms"] = to_numeric(listing["bathrooms"])
+    parsed_columns["suites"] = to_numeric(listing["suites"]) or 0
+    parsed_columns["parking_spaces"] = to_numeric(listing["parkingSpaces"]) or 0
 
-        pricingInfos = [
-            p for p in listing["pricingInfos"] if p["businessType"] == business_type
-        ][0]
+    pricingInfos = [
+        p for p in listing["pricingInfos"] if p["businessType"] == business_type
+    ][0]
 
-        parsed_columns["price"] = to_numeric(pricingInfos.get("price"))
-        parsed_columns["condo_fee"] = to_numeric(pricingInfos.get("monthlyCondoFee"))
+    parsed_columns["price"] = to_numeric(pricingInfos.get("price"))
+    parsed_columns["condo_fee"] = to_numeric(pricingInfos.get("monthlyCondoFee"))
 
-        parsed_columns["total_fee"] = parsed_columns["price"]
-        if parsed_columns["condo_fee"] is not None:
-            parsed_columns["total_fee"] = (
-                parsed_columns["price"] + parsed_columns["condo_fee"]
-            )
-
-        address = listing["address"]
-
-        if "point" not in address.keys():
-            address["point"] = {}
-
-        parsed_columns["address_lat"] = address["point"].get("lat")
-        parsed_columns["address_lon"] = address["point"].get("lon")
-
-        street, streetNumber, neighborhood, complement = (
-            address.get("street"),
-            address.get("streetNumber"),
-            address.get("neighborhood"),
-            address.get("complement"),
+    parsed_columns["total_fee"] = parsed_columns["price"]
+    if parsed_columns["condo_fee"] is not None:
+        parsed_columns["total_fee"] = (
+            parsed_columns["price"] + parsed_columns["condo_fee"]
         )
-        if streetNumber:
-            parsed_columns["address"] = f"{street}, {streetNumber} - {neighborhood}"
-        else:
-            parsed_columns["address"] = f"{street} - {neighborhood}"
 
-        if complement:
-            parsed_columns["address"] += f" ({complement})"
+    address = listing["address"]
+
+    if "point" not in address.keys():
+        address["point"] = {}
+
+    parsed_columns["address_lat"] = address["point"].get("lat")
+    parsed_columns["address_lon"] = address["point"].get("lon")
+
+    street, streetNumber, neighborhood, complement = (
+        address.get("street"),
+        address.get("streetNumber"),
+        address.get("neighborhood"),
+        address.get("complement"),
+    )
+    if streetNumber:
+        parsed_columns["address"] = f"{street}, {streetNumber} - {neighborhood}"
+    else:
+        parsed_columns["address"] = f"{street} - {neighborhood}"
+
+    if complement:
+        parsed_columns["address"] += f" ({complement})"
 
     linha, estacao, distance = "", "", 0
     if df_metro.shape[0] > 0:
@@ -104,4 +103,4 @@ def preprocess(
     parsed_columns["createdAt"] = pd.to_datetime(listing["createdAt"])
     parsed_columns["updatedAt"] = pd.to_datetime(listing["updatedAt"])
 
-    return parsed_columns
+    return data, parsed_columns

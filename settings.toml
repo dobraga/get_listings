@@ -31,8 +31,10 @@ max_amenities = 10
 DEBUG = true
 max_page = 2
 SQLALCHEMY_DATABASE_URI  = 'postgresql://postgres:postgres@localhost:15432/listing'
+force_update = true
 
 [production]
 DEBUG = false
 max_page = -1
 SQLALCHEMY_DATABASE_URI  = 'postgresql://postgres:postgres@db:5432/listing'
+force_update = false
