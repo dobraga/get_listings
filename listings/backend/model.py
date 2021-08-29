@@ -1,9 +1,7 @@
-from sklearn.metrics import (
-    mean_absolute_error as mae,
-    mean_absolute_percentage_error as mape,
-    mean_squared_error as mse,
-)
-from sklearn.model_selection import KFold
+from sklearn.metrics import mean_absolute_error as mae, mean_squared_error as mse
+from sklearn.compose import TransformedTargetRegressor
+from sklearn.model_selection import cross_val_predict
+from datetime import datetime
 import lightgbm as lgb
 import pandas as pd
 import numpy as np
@@ -12,61 +10,106 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class Model:
-    def __init__(self, model):
-        self.base_model = model
-
-    def fit_predict(self, X, y, n_folds=5, clip=True, prep=np.log1p, posp=np.expm1):
-        y_predict = np.zeros(y.shape[0])
-
-        for train_index, test_index in KFold(n_splits=n_folds).split(X):
-            X_train, X_test = X.iloc[train_index], X.iloc[test_index]
-            y_train = y[train_index]
-
-            if clip:
-                qt = np.quantile(y_train, [0.99, 1])
-                y_train = np.clip(y_train, 0, qt[0])
-
-            model = self.base_model.fit(X_train, prep(y_train))
-            y_predict[test_index] = posp(model.predict(X_test))
-
-        log.info(
-            {
-                metric.__name__: round(metric(y, y_predict), 4)
-                for metric in [mse, mae, mape]
-            }
-        )
-
-        return y_predict
+def rmse(y_true, y_pred):
+    return np.sqrt(mse(y_true, y_pred))
 
 
-def run_model(df):
-    if df.shape[0] == 0:
-        return df
+metrics = [mae, rmse]
 
-    y = df.total_fee.values
-    X = df.drop(
-        columns=[
+
+def preprocess(df: pd.DataFrame) -> tuple:
+    log.info("Preprocessamento para modelagem iniciado")
+    df = df.copy()
+
+    X = df[
+        [
             "url",
-            "title",
-            "description",
-            "media",
-            "street",
-            "streetNumber",
-            "complement",
+            "usable_area",
+            "floors",
+            "type_unit",
+            "bedrooms",
+            "bathrooms",
+            "suites",
+            "parking_spaces",
             "amenities",
-            "advertiserContact_phones",
-            "whatsappNumber",
-            "price",
-            "condo_fee",
-            "total_fee",
+            "address_lat",
+            "address_lon",
+            "estacao",
+            "distance",
+            "created_date",
+            "updated_date",
         ]
+    ].set_index("url")
+    y = df.total_fee.values
+
+    # Transforma datas de criação e atualização em features
+    X["qtd_days_created"] = (
+        ((datetime.now() - pd.to_datetime(X["created_date"])) / np.timedelta64(1, "D"))
+        .round()
+        .astype(int)
     )
-    X = pd.get_dummies(X).fillna(-1)
+    X["qtd_days_updated"] = (
+        ((datetime.now() - pd.to_datetime(X["updated_date"])) / np.timedelta64(1, "D"))
+        .round()
+        .astype(int)
+    )
 
-    df = df.assign(
-        pred=Model(lgb.LGBMRegressor()).fit_predict(X, y),
-        error=lambda x: x["total_fee"] - x["pred"],
-    ).sort_values("error", ascending=True)
+    # Transforma colunas não numéricas
+    X.loc[
+        ~X.type_unit.isin(["APARTMENT", "HOME", "CONDOMINIUM", "PENTHOUSE", "FLAT"]),
+        "type_unit",
+    ] = "OTHERS"
 
-    return df
+    estacoes = X.loc[X.estacao != "", "estacao"].value_counts(normalize=True)
+    estacoes_validas = list(estacoes[estacoes > 0.05].index) + [""]
+    X.loc[~X.estacao.isin(estacoes_validas), "estacao"] = "OTHERS"
+
+    # dummies
+    dummies = pd.get_dummies(X[["type_unit", "estacao"]])
+    X[dummies.columns] = dummies.values
+
+    # amenities
+    valid_amenities = [
+        "ELEVATOR",
+        "POOL",
+        "BARBECUE_GRILL",
+        "PARTY_HALL",
+        "PLAYGROUND",
+        "GATED_COMMUNITY",
+        "BALCONY",
+        "INTERCOM",
+        "KITCHEN_CABINETS",
+        "GYM",
+        "SAUNA",
+        "FURNISHED",
+        "SPORTS_COURT",
+    ]
+    amenities = X.amenities.explode()
+    amenities[~amenities.isin([valid_amenities])] = "OTHERS"
+    amenities = pd.get_dummies(amenities).groupby(level=0).max()
+    X[amenities.columns] = amenities.values
+    X = X.drop(
+        columns=["type_unit", "estacao", "created_date", "updated_date", "amenities"]
+    )
+
+    log.info("Preprocessamento para modelagem finalizado")
+
+    return X, y
+
+
+def predict(df: pd.DataFrame) -> np.ndarray:
+    X, y = preprocess(df)
+
+    log.info("Modelagem iniciada")
+
+    model = lgb.LGBMRegressor()
+    model = TransformedTargetRegressor(model, func=np.log1p, inverse_func=np.expm1)
+
+    predict = cross_val_predict(model, X, y, n_jobs=-1)
+
+    m = {m.__name__: m(y, predict) for m in metrics}
+    log.info(f"Using {model} with metrics {m}")
+
+    log.info("Modelagem finalizada")
+
+    return predict
