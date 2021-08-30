@@ -40,6 +40,19 @@ def preprocess(df: pd.DataFrame) -> tuple:
             "updated_date",
         ]
     ].set_index("url")
+
+    numeric_columns = [
+        "usable_area",
+        "floors",
+        "bedrooms",
+        "bathrooms",
+        "suites",
+        "parking_spaces",
+        "address_lat",
+        "address_lon",
+        "distance",
+    ]
+    X[numeric_columns] = X[numeric_columns].astype(float).fillna(-999)
     y = df.total_fee.values
 
     # Transforma datas de criação e atualização em features
