@@ -143,13 +143,15 @@ def update_predict(locationId, business_type, listing_type) -> None:
     """
     ).all()
 
-    df = pd.DataFrame(IS.dump(imoveis))
-    df["pred"] = predict(df)
+    if imoveis:
+        df = pd.DataFrame(IS.dump(imoveis))
+        df["pred"] = predict(df)
 
-    for _, (url, pred) in df[["url", "pred"]].iterrows():
-        print(url, pred)
-        current_app.logger.debug(f"Atualizando a previsão de '{url}' para {pred}")
-        Imovel.query.filter_by(url=url).first().total_fee_predict = pred
+        for _, (url, pred) in df[["url", "pred"]].iterrows():
+            current_app.logger.debug(f"Atualizando a previsão de '{url}' para {pred}")
+            Imovel.query.filter_by(url=url).first().total_fee_predict = pred
+    else:
+        current_app.logger.info("Nenhum imóvel encontrado")
 
     current_app.logger.info("Atualização da previsão de preços finalizada")
 
