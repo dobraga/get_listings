@@ -247,6 +247,8 @@ def get_listings(
                         imovel.suites = p["suites"]
                         imovel.parking_spaces = p["parking_spaces"]
                         imovel.amenities = p["amenities"]
+                        imovel.images = p["images"]
+                        imovel.address = p["address"]
                         imovel.address_lat = p["address_lat"]
                         imovel.address_lon = p["address_lon"]
                         imovel.price = p["price"]
@@ -281,6 +283,8 @@ def get_listings(
                         suites=p["suites"],
                         parking_spaces=p["parking_spaces"],
                         amenities=p["amenities"],
+                        images=p["images"],
+                        address=p["address"],
                         address_lat=p["address_lat"],
                         address_lon=p["address_lon"],
                         price=p["price"],

@@ -29,7 +29,9 @@ class Imovel(db.Model):
     suites = db.Column(db.Integer())
     parking_spaces = db.Column(db.Integer())
     amenities = db.Column(db.ARRAY(db.String()))
+    images = db.Column(db.ARRAY(db.String()))
 
+    address = db.Column(db.String())
     address_lat = db.Column(db.Float())
     address_lon = db.Column(db.Float())
 

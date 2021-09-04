@@ -81,10 +81,13 @@ def preprocess(
         address.get("neighborhood"),
         address.get("complement"),
     )
+
     if streetNumber:
         parsed_columns["address"] = f"{street}, {streetNumber} - {neighborhood}"
-    else:
+    elif street:
         parsed_columns["address"] = f"{street} - {neighborhood}"
+    else:
+        parsed_columns["address"] = f"{neighborhood}"
 
     if complement:
         parsed_columns["address"] += f" ({complement})"
@@ -99,6 +102,12 @@ def preprocess(
     parsed_columns["linha"] = linha
     parsed_columns["estacao"] = estacao
     parsed_columns["distance"] = distance
+
+    if data["medias"]:
+        parsed_columns["images"] = [
+            i["url"].format(action="crop", width="264", height="200")
+            for i in data["medias"]
+        ]
 
     parsed_columns["createdAt"] = pd.to_datetime(listing["createdAt"])
     parsed_columns["updatedAt"] = pd.to_datetime(listing["updatedAt"])
