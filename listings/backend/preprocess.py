@@ -103,6 +103,7 @@ def preprocess(
     parsed_columns["estacao"] = estacao
     parsed_columns["distance"] = distance
 
+    parsed_columns["images"] = []
     if data["medias"]:
         parsed_columns["images"] = [
             i["url"].format(action="crop", width="264", height="200")
