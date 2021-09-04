@@ -1,4 +1,8 @@
-from sklearn.metrics import mean_absolute_error as mae, mean_squared_error as mse
+from sklearn.metrics import (
+    mean_absolute_error as mae,
+    mean_squared_error as mse,
+    mean_absolute_percentage_error as mape,
+)
 from sklearn.compose import TransformedTargetRegressor
 from sklearn.model_selection import cross_val_predict
 from datetime import datetime
@@ -14,7 +18,7 @@ def rmse(y_true, y_pred):
     return np.sqrt(mse(y_true, y_pred))
 
 
-metrics = [mae, rmse]
+metrics = [mape, mae, rmse]
 
 
 def preprocess(df: pd.DataFrame) -> tuple:
