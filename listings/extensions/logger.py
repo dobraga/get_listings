@@ -14,7 +14,7 @@ def init_app(app):
             filename="logger.log",
             format="%(asctime)s %(levelname)8s (%(name)s:%(lineno)s): %(message)s",
             filemode="w",
-            level=logging.DEBUG,
+            level=logging.INFO,
         )
 
     return app
