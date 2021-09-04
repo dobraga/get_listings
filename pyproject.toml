@@ -33,7 +33,6 @@ xgboost = "~=1.4"
 tqdm = "~=4.62"
 plotly = "~=5.2"
 ipywidgets = "~=7.6"
-ray = {extras = ["default"], version = "~=1.6"}
 optuna = "~=2.9"
 
 [build-system]
