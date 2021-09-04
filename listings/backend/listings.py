@@ -192,7 +192,7 @@ def get_listings(
         return get_activated_listings(locationId, business_type, listing_type)
 
     current_app.logger.info(
-        f"Extraindo novos dados -> {business_type=}, {listing_type=}, {neighborhood=},  {locationId=},  {state=},  {city=},  {zone=}, {last_update=}"
+        f"Extraindo novos dados -> {business_type=}, {listing_type=}, {neighborhood=},  {locationId=},  {state=},  {city=},  {zone=}, {last_update=}, {force_update=}"
     )
 
     # Caso contrário, limpa dados dos imoveis ativos e realiza a busca dos imoveis
@@ -232,9 +232,12 @@ def get_listings(
                 imovel = Imovel.query.filter_by(url=url).first()
 
                 if imovel:
-                    if imovel.updated_date.date() != p["updatedAt"].date():
+                    if (
+                        force_update
+                        or imovel.updated_date.date() != p["updatedAt"].date()
+                    ):
                         current_app.logger.debug(
-                            f"updating {url} because {imovel.updated_date.date()} != {p['updatedAt'].date()}"
+                            f"updating {url} because {imovel.updated_date.date()} != {p['updatedAt'].date()} or forced"
                         )
 
                         imovel.raw = d
