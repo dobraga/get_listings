@@ -19,6 +19,8 @@ class ImovelSchema(SQLAlchemyAutoSchema):
         fields = (
             "title",
             "url",
+            "business_type",
+            "listing_type",
             "images",
             "neighborhood",
             "locationId",
