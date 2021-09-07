@@ -1,6 +1,6 @@
 # Get Listings
 
-Esse app tem como objetivo capturar dados do ZapImoveis e Vivareal, adicionando a possibilidade da visualização em mapa, um modelo de precificação para identificar os imóveis com melhor custo/benefício e a distância da estação de metro/trêm mais próxima.
+Esse app tem como objetivo capturar dados do ZapImoveis e Vivareal, adicionando a possibilidade da visualização em mapa, um modelo de precificação para identificar os imóveis com melhor custo/benefício e a distância da estação de metro/trem mais próxima.
 
 ## Configuração
 
