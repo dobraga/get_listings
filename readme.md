@@ -28,3 +28,9 @@ cd get_listings
 ```sh
 docker-compose -f "docker-compose.yml" up -d --build
 ```
+
+## Dashboard
+
+```sh
+python dashboard
+```

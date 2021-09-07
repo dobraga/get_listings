@@ -26,24 +26,21 @@ def init_app(app):
                 tp_listings = depara_tp_listings[tp_listings]
                 selected_local = locations[selected_local]
 
+                if "submit-table" in request.form.keys():
+                    endpoint = "table"
+                elif "submit-dash" in request.form.keys():
+                    endpoint = "/dash/"
+                else:
+                    endpoint = "map"
+
                 url = url_for(
-                    "map",
+                    endpoint,
                     local=local,
                     query=query,
                     tp_contrato=tp_contrato,
                     tp_listings=tp_listings,
                     **selected_local
                 )
-
-                if "submit-table" in request.form.keys():
-                    url = url_for(
-                        "table",
-                        local=local,
-                        query=query,
-                        tp_contrato=tp_contrato,
-                        tp_listings=tp_listings,
-                        **selected_local
-                    )
 
                 return redirect(url)
 

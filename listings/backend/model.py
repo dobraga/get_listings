@@ -5,8 +5,8 @@ from sklearn.metrics import (
 )
 from sklearn.compose import TransformedTargetRegressor
 from sklearn.model_selection import cross_val_predict
+from xgboost import XGBRegressor
 from datetime import datetime
-import lightgbm as lgb
 import pandas as pd
 import numpy as np
 import logging
@@ -119,7 +119,19 @@ def predict(df: pd.DataFrame) -> np.ndarray:
 
     log.info("Modelagem iniciada")
 
-    model = lgb.LGBMRegressor()
+    model = XGBRegressor(
+        **{
+            "n_jobs": -1,
+            "colsample_bytree": 0.4294193551651084,
+            "learning_rate": 0.3905369200097456,
+            "max_depth": 76,
+            "min_child_weight": 5,
+            "n_estimators": 445,
+            "reg_alpha": 0.0007730725327317141,
+            "reg_lambda": 0.7856420250743005,
+            "subsample": 0.8946981461819655,
+        }
+    )
     model = TransformedTargetRegressor(model, func=np.log1p, inverse_func=np.expm1)
 
     predict = cross_val_predict(model, X, y, n_jobs=-1)

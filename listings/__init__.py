@@ -1,7 +1,7 @@
 from flask import Flask
 
 from .extensions import conf, database, serializer, logger
-from .views import home, table, map
+from .views import home, table, map, dashboard
 
 
 def create_app():
@@ -10,6 +10,7 @@ def create_app():
     home.init_app(app)
     table.init_app(app)
     map.init_app(app)
+    dashboard.init_app(app)
 
     logger.init_app(app)
     conf.init_app(app)
