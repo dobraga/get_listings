@@ -9,13 +9,11 @@ from dash.dependencies import Input, Output, State
 
 def init_app(app: Dash) -> Dash:
     @app.callback(
-        [
-            Output("sidebar", "style"),
-            Output("page-content", "style"),
-            Output("side_click", "data"),
-        ],
-        [Input("btn_sidebar", "n_clicks")],
-        [State("side_click", "data")],
+        Output("sidebar", "style"),
+        Output("page-content", "style"),
+        Output("side_click", "data"),
+        Input("btn_sidebar", "n_clicks"),
+        State("side_click", "data"),
     )
     def toggle_sidebar(n, nclick):
         if n:
@@ -36,7 +34,7 @@ def init_app(app: Dash) -> Dash:
 
     @app.callback(
         Output("page-content", "children"),
-        [Input("url", "pathname")],
+        Input("url", "pathname"),
     )
     def render_page_content(pathname):
         if pathname in ["", "/", "/dash", "/dash/table"]:
