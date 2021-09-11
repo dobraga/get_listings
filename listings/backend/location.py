@@ -2,7 +2,6 @@ import logging
 import requests
 from flask import current_app
 
-
 log = logging.getLogger(__name__)
 
 origin = "vivareal"
@@ -69,5 +68,7 @@ def list_locations(local: str) -> dict:
         return {k: v for k, v in d.items() if k in keys}
 
     locations = {set_name(k): get_keys(v) for k, v in locations.items()}
+
+    log.info(f'from "{local}" founded {locations}')
 
     return locations
