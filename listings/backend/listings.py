@@ -1,9 +1,9 @@
+import logging
 import requests
 import pandas as pd
 from math import ceil
 from time import sleep
 from datetime import datetime
-from flask import current_app
 from joblib import Parallel, delayed
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -12,10 +12,15 @@ from listings.models import Imovel, ImovelAtivo
 from listings.backend.preprocess import preprocess
 from listings.extensions.serializer import ImovelSchema
 
+log = logging.getLogger(__name__)
 IS = ImovelSchema(many=True)
 
 
 def _request(
+    max_page,
+    api,
+    site,
+    portal,
     origin: str,
     neighborhood,
     locationId,
@@ -29,14 +34,8 @@ def _request(
     """
     Request all pages for one site
     """
-    conf = current_app.config
 
-    pages = conf["max_page"]
-    api = conf["sites"][origin]["api"]
-    site = conf["sites"][origin]["site"]
-    portal = conf["sites"][origin]["portal"]
-
-    current_app.logger.info(f"Buscando dados do {portal}")
+    log.info(f"Buscando dados do {portal}")
 
     headers = {
         "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
@@ -74,44 +73,40 @@ def _request(
 
     if "search" in listings.keys():
         total_listings = listings["search"]["totalCount"]
-        max_page = ceil(total_listings / query["size"])
-        current_app.logger.info(
-            f"{portal} total listings: {total_listings} and max pages: {max_page}"
+        max_page_ = ceil(total_listings / query["size"])
+        log.info(
+            f"{portal} total listings: {total_listings} and max pages: {max_page_}"
         )
-        pages = min(pages, max_page)
-        if pages == -1:
-            pages = max_page
-        current_app.logger.info(f"{portal} getting {pages} pages")
+        max_page = min(max_page, max_page_)
+        if max_page == -1:
+            max_page = max_page_
+        log.info(f"{portal} getting {max_page} pages")
 
         data = []
-        for page in range(pages):
+        for page in range(max_page):
             try:
                 query["from"] = page * query["size"]
                 r = requests.get(base_url, params=query, headers=headers)
                 r.raise_for_status()
-                current_app.logger.info(
-                    f"Getting page {page+1}/{pages} from {portal} OK"
-                )
+                log.info(f"Getting page {page+1}/{max_page} from {portal} OK")
                 data += r.json()["search"]["result"]["listings"]
                 sleep(0.05)
 
             except requests.exceptions.HTTPError as e:
-                current_app.logger.error(
-                    f"Getting page {page+1}/{pages} from {portal}: {e}"
-                )
+                log.error(f"Getting page {page+1}/{max_page} from {portal}: {e}")
 
-        current_app.logger.info(f"Busca dos dados do {portal} foi finalizada")
+        log.info(f"Busca dos dados do {portal} foi finalizada")
 
         return site, data
 
     raise Exception(listings)
 
 
-def get_activated_listings(locationId, business_type, listing_type):
+def get_activated_listings(engine, locationId, business_type, listing_type):
 
-    current_app.logger.info("Iniciando busca dos dados atualizados")
+    log.info("Iniciando busca dos dados atualizados")
 
-    imoveis = current_app.db.engine.execute(
+    imoveis = engine.execute(
         f"""
         SELECT i.*
         FROM imovel_ativo as a
@@ -124,15 +119,15 @@ def get_activated_listings(locationId, business_type, listing_type):
     """
     ).all()
 
-    current_app.logger.info("Busca dos dados atualizados concluída")
+    log.info("Busca dos dados atualizados concluída")
 
     return pd.DataFrame(IS.dump(imoveis))
 
 
-def update_predict(locationId, business_type, listing_type) -> None:
-    current_app.logger.info("Atualizando previsão de preços")
+def update_predict(engine, locationId, business_type, listing_type) -> None:
+    log.info("Atualizando previsão de preços")
 
-    imoveis = current_app.db.engine.execute(
+    imoveis = engine.execute(
         f"""
         SELECT *
         FROM imovel
@@ -148,12 +143,12 @@ def update_predict(locationId, business_type, listing_type) -> None:
         df["pred"] = predict(df)
 
         for _, (url, pred) in df[["url", "pred"]].iterrows():
-            current_app.logger.debug(f"Atualizando a previsão de '{url}' para {pred}")
+            log.debug(f"Atualizando a previsão de '{url}' para {pred}")
             Imovel.query.filter_by(url=url).first().total_fee_predict = pred
     else:
-        current_app.logger.info("Nenhum imóvel encontrado")
+        log.info("Nenhum imóvel encontrado")
 
-    current_app.logger.info("Atualização da previsão de preços finalizada")
+    log.info("Atualização da previsão de preços finalizada")
 
 
 def get_listings(
@@ -165,11 +160,15 @@ def get_listings(
     business_type: str,
     listing_type: str,
     df_metro: pd.DataFrame,
-    force_update: bool = False,
+    db,
+    config,
+    **kwargs,
 ) -> pd.DataFrame:
 
+    force_update = config.get("FORCE_UPDATE", False)
+
     # Para dados que já foram atualizados no dia da consulta, apenas retorna os dados
-    last_update = current_app.db.engine.execute(
+    last_update = db.engine.execute(
         f"""
         SELECT max(updated_date)
         FROM imovel_ativo
@@ -186,17 +185,20 @@ def get_listings(
         and last_update
         and last_update.date() == datetime.today().date()
     ):
-        current_app.logger.info(
+        log.info(
             f"Reusando dados extraídos -> {business_type=}, {listing_type=}, {neighborhood=},  {locationId=},  {state=},  {city=},  {zone=}, {last_update=}"
         )
-        return get_activated_listings(locationId, business_type, listing_type)
+        return get_activated_listings(
+            db.engine, locationId, business_type, listing_type
+        )
 
-    current_app.logger.info(
+    log.info(
         f"Extraindo novos dados -> {business_type=}, {listing_type=}, {neighborhood=},  {locationId=},  {state=},  {city=},  {zone=}, {last_update=}, {force_update=}"
     )
 
     # Caso contrário, limpa dados dos imoveis ativos e realiza a busca dos imoveis
-    current_app.db.engine.execute(
+    log.info(f"Limpando dados dos imóveis ativos")
+    db.engine.execute(
         f"""
         DELETE FROM imovel_ativo
         WHERE
@@ -205,11 +207,19 @@ def get_listings(
             and location_id = '{locationId}'
         """
     )
+    log.info(f"Limpeza concluida")
+
+    def prep(x):
+        return preprocess(x, business_type=business_type, df_metro=df_metro)
 
     with ProcessPoolExecutor() as executor:
         futures = {
             executor.submit(
                 _request,
+                max_page=config["MAX_PAGE"],
+                api=config["SITES"][site]["api"],
+                site=config["SITES"][site]["site"],
+                portal=config["SITES"][site]["portal"],
                 origin=site,
                 neighborhood=neighborhood,
                 locationId=locationId,
@@ -219,11 +229,8 @@ def get_listings(
                 business_type=business_type,
                 listing_type=listing_type,
             ): site
-            for site in current_app.config["sites"].keys()
+            for site in config["SITES"].keys()
         }
-
-        def prep(x):
-            return preprocess(x, business_type=business_type, df_metro=df_metro)
 
         for future in as_completed(futures):
             site, data = future.result()
@@ -236,7 +243,7 @@ def get_listings(
                         force_update
                         or imovel.updated_date.date() != p["updatedAt"].date()
                     ):
-                        current_app.logger.debug(
+                        log.debug(
                             f"updating {url} because {imovel.updated_date.date()} != {p['updatedAt'].date()} or forced"
                         )
 
@@ -262,9 +269,9 @@ def get_listings(
                         imovel.distance = p["distance"]
                         imovel.updated_date = p["updatedAt"]
 
-                        current_app.logger.debug(f"updated {url}")
+                        log.debug(f"updated {url}")
                     else:
-                        current_app.logger.debug(f"not updated {url}")
+                        log.debug(f"not updated {url}")
 
                 else:
                     imovel = Imovel(
@@ -299,8 +306,8 @@ def get_listings(
                         created_date=p["createdAt"],
                         updated_date=p["updatedAt"],
                     )
-                    current_app.db.session.add(imovel)
-                    current_app.logger.debug(f"created {url}")
+                    db.session.add(imovel)
+                    log.debug(f"created {url}")
 
                 if not ImovelAtivo.query.filter_by(url=url).first():
                     imovel_ativo = ImovelAtivo(
@@ -309,12 +316,12 @@ def get_listings(
                         business_type=business_type,
                         listing_type=listing_type,
                     )
-                    current_app.db.session.add(imovel_ativo)
+                    db.session.add(imovel_ativo)
 
-    update_predict(locationId, business_type, listing_type)
+    update_predict(db.engine, locationId, business_type, listing_type)
 
-    current_app.db.session.commit()
+    db.session.commit()
 
-    df = get_activated_listings(locationId, business_type, listing_type)
+    df = get_activated_listings(db.engine, locationId, business_type, listing_type)
 
     return df

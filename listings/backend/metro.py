@@ -3,12 +3,14 @@ from requests import Session, get
 from flask import current_app
 from lxml import html
 import pandas as pd
+import logging
 
 from listings.models import Metro
 from listings.extensions.serializer import MetroSchema
 
 base_url = "https://pt.wikipedia.org"
 ms = MetroSchema(many=True)
+log = logging.getLogger(__name__)
 
 
 def list_estacoes(urls: list) -> set:
@@ -55,12 +57,12 @@ def fetch(session, url_estacao) -> tuple:
         return None, None, None
 
 
-def get_metro(uf: str):
+def get_metro(uf: str, config: dict, db):
     uf = uf.lower()
-    urls = current_app.config["metro_trem"].get(uf)
+    urls = config["METRO_TREM"].get(uf)
 
     if urls is None:
-        current_app.logger.warn(f"not found metro/train urls for {uf}")
+        log.warning(f"not found metro/train urls for {uf}")
         return pd.DataFrame()
     urls = urls["urls"]
 
@@ -95,7 +97,8 @@ def get_metro(uf: str):
                         url=url_estacao,
                     )
 
-                    current_app.db.session.add(metro)
-                    current_app.db.session.commit()
+                    db.session.add(metro)
+
+        db.session.commit()
 
     return pd.DataFrame(ms.dump(metros))
