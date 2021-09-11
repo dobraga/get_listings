@@ -24,6 +24,7 @@ python-dotenv = "~=0.18"
 psycopg2-binary = "~=2.9"
 xgboost = "≃1.4"
 dash-bootstrap-components = "~=0.13"
+dash-table = "~=5.0"
 
 [tool.poetry.dev-dependencies]
 mypy = "~=0.812"
@@ -35,6 +36,7 @@ plotly = "~=5.2"
 ipywidgets = "~=7.6"
 optuna = "~=2.9"
 lightgbm = "≃3.2"
+mlflow = "~=1.20.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
