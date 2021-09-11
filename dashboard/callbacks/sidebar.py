@@ -1,11 +1,13 @@
 from dashboard.styles import SIDEBAR_HIDEN, SIDEBAR_STYLE, CONTENT_STYLE, CONTENT_STYLE1
+from dashboard.pages import table, map
+
 
 from dash import html, Dash
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 
 
-def init_app(app: Dash):
+def init_app(app: Dash) -> Dash:
     @app.callback(
         [
             Output("sidebar", "style"),
@@ -32,29 +34,16 @@ def init_app(app: Dash):
 
         return sidebar_style, content_style, cur_nclick
 
-    # this callback uses the current pathname to set the active state of the
-    # corresponding nav link to true, allowing users to tell see page they are on
-    @app.callback(
-        [Output(f"page-{i}-link", "active") for i in range(1, 4)],
-        [Input("url", "pathname")],
-    )
-    def toggle_active_links(pathname):
-        if pathname == "/":
-            # Treat page 1 as the homepage / index
-            return True, False, False
-        return [pathname == f"/dash/page-{i}" for i in range(1, 4)]
-
     @app.callback(
         Output("page-content", "children"),
         [Input("url", "pathname")],
     )
     def render_page_content(pathname):
-        if pathname in ["/", "/dash/", "/dash/page-1"]:
-            return html.P("This is the content of page 1!")
-        elif pathname == "/dash/page-2":
-            return html.P("This is the content of page 2. Yay!")
-        elif pathname == "/dash/page-3":
-            return html.P("Oh cool, this is page 3!")
+        if pathname in ["", "/", "/dash", "/dash/table"]:
+            return table.layout
+        elif pathname == "/dash/map":
+            return map.layout
+
         # If the user tries to reach a different page, return a 404 message
         return dbc.Jumbotron(
             [
