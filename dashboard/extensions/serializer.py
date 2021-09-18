@@ -1,7 +1,7 @@
 from flask_marshmallow import Marshmallow
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 
-from listings.models import Imovel, Metro
+from dashboard.models import Imovel, Metro
 
 ma = Marshmallow()
 
@@ -9,6 +9,7 @@ ma = Marshmallow()
 def init_app(app):
     ma.init_app(app)
     app.ma = ma
+    return app
 
 
 class ImovelSchema(SQLAlchemyAutoSchema):

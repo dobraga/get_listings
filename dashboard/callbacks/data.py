@@ -6,11 +6,16 @@ from dash.exceptions import PreventUpdate
 from dash.dependencies import Input, Output, State
 
 
-from listings.backend.location import list_locations
-from listings.backend.listings import get_listings
-from listings.backend.metro import get_metro
+from backend.metro import get_metro
+from backend.location import list_locations
+from backend.get_listings import get_listings
 
 from dashboard.utils import depara_tp_contrato, depara_tp_listings
+
+
+def min_max(values: pd.Series):
+    ini, fim = int(values.min()), ceil(values.max())
+    return ini, ini, fim + 1, fim, ini, fim + 1
 
 
 def init_app(app: Dash) -> Dash:
@@ -21,7 +26,7 @@ def init_app(app: Dash) -> Dash:
         Input("search_local", "n_clicks"),
         State("local", "value"),
     )
-    def search_local(click, value):
+    def search_local(_, value):
         if not value:
             raise PreventUpdate
 
@@ -36,11 +41,19 @@ def init_app(app: Dash) -> Dash:
 
     @app.callback(
         Output("data", "data"),
-        Output("slider_preco", "min"),
-        Output("slider_preco", "max"),
-        Output("slider_preco", "value"),
-        Output("slider_preco", "marks"),
         Output("fade_filter_imoveis", "is_in"),
+        Output("preco_min", "value"),
+        Output("preco_min", "min"),
+        Output("preco_min", "max"),
+        Output("preco_max", "value"),
+        Output("preco_max", "min"),
+        Output("preco_max", "max"),
+        Output("quarto_min", "value"),
+        Output("quarto_min", "min"),
+        Output("quarto_min", "max"),
+        Output("quarto_max", "value"),
+        Output("quarto_max", "min"),
+        Output("quarto_max", "max"),
         Input("search_imoveis", "n_clicks"),
         State("select_local", "options"),
         State("select_local", "value"),
@@ -64,41 +77,56 @@ def init_app(app: Dash) -> Dash:
             business_type=business_type,
             listing_type=listing_type,
             df_metro=get_metro(
-                selected_location["stateAcronym"], app.server.config, app.db
+                selected_location["stateAcronym"], app.server.config, app.server.db
             ),
             config=app.server.config,
-            db=app.db,
+            db=app.server.db,
         )
-
-        ini, fim = int(df.total_fee.min()), ceil(df.total_fee.max())
-        ini_log, fim_log = np.log1p(ini), np.log1p(fim)
 
         return (
             df.to_dict("records"),
-            ini_log,
-            fim_log,
-            (ini_log, fim_log),
-            {ini_log: {"label": str(ini)}, fim_log: {"label": str(fim)}},
             True,
+            *min_max(df.total_fee),
+            *min_max(df.bedrooms),
+        )
+
+    @app.callback(
+        Output("filter_description", "children"),
+        Input("preco_min", "value"),
+        Input("preco_max", "value"),
+        Input("quarto_min", "value"),
+        Input("quarto_max", "value"),
+    )
+    def describe_filter(*args):
+        if [arg for arg in args if arg is None]:
+            raise PreventUpdate
+
+        return "Selecionado imóveis com valores entre [{},{}] e que possuam a quantidade [{},{}] de quartos".format(
+            *args
         )
 
     @app.callback(
         Output("filtered_data", "data"),
-        Output("selected_slider_preco", "children"),
+        Input("filter_imoveis", "n_clicks"),
         Input("data", "data"),
-        Input("slider_preco", "value"),
+        State("preco_min", "value"),
+        State("preco_max", "value"),
+        State("quarto_min", "value"),
+        State("quarto_max", "value"),
     )
-    def filter_data(data, slider_preco):
+    def filter_data(n_clicks, data, preco_min, preco_max, quarto_min, quarto_max):
+        if n_clicks is None and data is None:
+            raise PreventUpdate
+
         df = pd.DataFrame(data)
 
-        slider_preco = np.expm1(slider_preco)
-        ini, fim = int(slider_preco[0]), ceil(slider_preco[1])
+        df = df[
+            (df["total_fee"] >= preco_min)
+            & (df["total_fee"] <= preco_max)
+            & (df["bedrooms"] >= quarto_min)
+            & (df["bedrooms"] <= quarto_max)
+        ]
 
-        df = df[(df["total_fee"] >= ini) & (df["total_fee"] <= fim)]
-
-        return (
-            df.to_dict("records"),
-            "Selecionado imóveis com valores entre [{},{}]".format(ini, fim),
-        )
+        return df.to_dict("records")
 
     return app

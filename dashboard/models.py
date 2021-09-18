@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import JSON
 import uuid
 
-from listings.extensions.database import db
+from dashboard.extensions.database import db
 
 
 class Imovel(db.Model):
@@ -41,6 +41,8 @@ class Imovel(db.Model):
 
     linha = db.Column(db.String())
     estacao = db.Column(db.String())
+    lat_metro = db.Column(db.Float())
+    lon_metro = db.Column(db.Float())
     distance = db.Column(db.Float())
 
     created_date = db.Column(db.DateTime(timezone=False))

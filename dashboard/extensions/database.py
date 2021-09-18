@@ -6,8 +6,10 @@ db = SQLAlchemy()
 
 
 def init_app(app: Dash) -> Dash:
-    db.init_app(app.server)
-    Migrate(app.server, db)
-    app.db = db
+    server = app.server
+    server.db = db
+
+    db.init_app(server)
+    Migrate(server, db)
 
     return app

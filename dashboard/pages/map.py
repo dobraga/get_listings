@@ -4,15 +4,17 @@ from dash import html, Dash
 from folium import Map, Marker
 from folium.plugins import MarkerCluster
 from dash.exceptions import PreventUpdate
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output
 
 layout = html.Iframe(
     id="map", srcDoc=Map(height="89%")._repr_html_(), width="100%", height="800px"
 )
 
+locale.setlocale(locale.LC_ALL, "pt_BR.utf8")
+
 
 def to_currency(value):
-    return locale.currency(value, grouping=True, symbol=None)
+    return locale.currency(value, grouping=True, symbol=True)
 
 
 def init_app(app: Dash) -> Dash:
@@ -36,17 +38,25 @@ def init_app(app: Dash) -> Dash:
 
         def format_template(**kwargs) -> str:
             if kwargs["business_type"] == "RENTAL":
-                preco = """
-                <p>
-                    <span> Valor {price}/Mês |</span>
-                    <span> Valor Condomínio {condo_fee}/Mês |</span>
-                    <span> total {total_fee}/Mês </span>
-                </p>
-                """.format(
-                    price=to_currency(kwargs["price"]),
-                    condo_fee=to_currency(kwargs["condo_fee"]),
-                    total_fee=to_currency(kwargs["total_fee"]),
-                )
+
+                if kwargs["condo_fee"] > 0:
+                    preco = """
+                    <p>
+                        <span> Valor {price}/Mês |</span>
+                        <span> Valor Condomínio {condo_fee}/Mês |</span>
+                        <span> total {total_fee}/Mês </span>
+                    </p>
+                    """.format(
+                        price=to_currency(kwargs["price"]),
+                        condo_fee=to_currency(kwargs["condo_fee"]),
+                        total_fee=to_currency(kwargs["total_fee"]),
+                    )
+                else:
+                    preco = """
+                    <p><span> Valor {}/Mês</span></p>
+                    """.format(
+                        to_currency(kwargs["price"])
+                    )
             else:
                 preco = """
                 <p>
@@ -58,6 +68,12 @@ def init_app(app: Dash) -> Dash:
                     price=to_currency(kwargs["price"]),
                     condo_fee=to_currency(kwargs["condo_fee"]),
                 )
+
+            image = kwargs["images"]
+            if image is not None and isinstance(image, list) and len(image) > 0:
+                image = image[0]
+            else:
+                image = "https://img2.gratispng.com/20180407/yhw/kisspng-empty-set-null-set-symbol-mathematics-forbidden-5ac859ad09c119.24223671152307959704.jpg"
 
             return """
             <div onclick="window.open('{url}');" style="cursor: pointer; width: 40vw; height: 20vh;">
@@ -80,7 +96,7 @@ def init_app(app: Dash) -> Dash:
                 title=kwargs["title"],
                 amenities=kwargs["amenities"],
                 style=base_style,
-                image=kwargs["images"][0],
+                image=image,
                 preco=preco,
             )
 
