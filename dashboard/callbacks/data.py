@@ -13,9 +13,10 @@ from backend.get_listings import get_listings
 from dashboard.utils import depara_tp_contrato, depara_tp_listings
 
 
-def min_max(values: pd.Series):
-    ini, fim = int(values.min()), ceil(values.max())
-    return ini, ini, fim + 1, fim, ini, fim + 1
+def min_max(values: pd.Series, plus=0):
+    ini, fim = values.min(), values.max()
+    ini, fim = int(int(ini / plus)) * plus, int(ceil(fim / plus)) * plus
+    return ini, ini, fim, fim, ini, fim
 
 
 def init_app(app: Dash) -> Dash:
@@ -86,8 +87,8 @@ def init_app(app: Dash) -> Dash:
         return (
             df.to_dict("records"),
             True,
-            *min_max(df.total_fee),
-            *min_max(df.bedrooms),
+            *min_max(df.total_fee, 500),
+            *min_max(df.bedrooms, 1),
         )
 
     @app.callback(
