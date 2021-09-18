@@ -24,6 +24,7 @@ python-dotenv = "0.*"
 psycopg2-binary = "2.*"
 dash-bootstrap-components = "0.*"
 dash-table = "5.*"
+lightgbm = "3.*"
 
 [tool.poetry.dev-dependencies]
 mypy = "0.*"
@@ -34,7 +35,6 @@ tqdm = "4.*"
 plotly = "5.*"
 ipywidgets = "7.*"
 optuna = "2.*"
-lightgbm = "3.*"
 mlflow = "1.*"
 xgboost = "1.*"
 

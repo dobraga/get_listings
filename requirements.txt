@@ -164,6 +164,12 @@ jinja2==2.11.3; python_version >= "3.5" and python_full_version < "3.0.0" or pyt
 joblib==1.0.1; python_version >= "3.6" \
     --hash=sha256:feeb1ec69c4d45129954f1b7034954241eedfd6ba39b5e9e4b6883be3332d5e5 \
     --hash=sha256:9c17567692206d2f3fb9ecf5e991084254fe631665c450b443761c4186a613f7
+lightgbm==3.2.1 \
+    --hash=sha256:79719706046faf708d9436cd989e9c61696ceb1c5fbaf1257ae9c2fa7bcff686 \
+    --hash=sha256:b4c158f3026cdf5087a047945686a38b6a1e0f761627907fd959cb7afc2743b3 \
+    --hash=sha256:95b0f1c8fec232be2995502151f8a168e30e7fd9a8e89d835ca5919820cd9033 \
+    --hash=sha256:0999f69e420281fc450d5ee4559ce0595931750aa377ff1c0228150505ea2bf8 \
+    --hash=sha256:bd98e3b501b4c24dc127f4ad93e467f42923fe3eefa99e143b5b93158f024395
 lxml==4.6.3; (python_version >= "2.7" and python_full_version < "3.0.0") or (python_full_version >= "3.5.0") \
     --hash=sha256:df7c53783a46febb0e70f6b05df2ba104610f2fb0d27023409734a3ecbb78fb2 \
     --hash=sha256:1b7584d421d254ab86d4f0b13ec662a9014397678a7c4265a02a6d7c2b18a75f \
