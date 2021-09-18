@@ -216,4 +216,5 @@ vignettes/*.pdf
 *.log
 *.parquet
 migrations/
+mlruns/
 *.db
