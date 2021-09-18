@@ -34,3 +34,14 @@ docker-compose -f "docker-compose.yml" up -d --build
 ```sh
 python dashboard
 ```
+
+## Desenvolvimento
+
+### Migrações
+
+```sh
+export FLASK_APP=dashboard:create_server
+flask db init
+flask db migrate 
+flask db upgrade
+```
