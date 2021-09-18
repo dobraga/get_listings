@@ -1,7 +1,6 @@
 [default]
 SQLALCHEMY_TRACK_MODIFICATIONS = false
 POSTGRES_DB = "imoveis"
-max_amenities = 10
 
 [default.metro_trem]
 [default.metro_trem.rj]
