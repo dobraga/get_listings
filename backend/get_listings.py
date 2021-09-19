@@ -130,6 +130,8 @@ def get_listings(
                         imovel.total_fee = p["total_fee"]
                         imovel.linha = p["linha"]
                         imovel.estacao = p["estacao"]
+                        imovel.lat_metro = p["lat_metro"]
+                        imovel.lon_metro = p["lon_metro"]
                         imovel.distance = p["distance"]
                         imovel.updated_date = p["updatedAt"]
 
@@ -166,6 +168,8 @@ def get_listings(
                         total_fee=p["total_fee"],
                         linha=p["linha"],
                         estacao=p["estacao"],
+                        lat_metro=p["lat_metro"],
+                        lon_metro=p["lon_metro"],
                         distance=p["distance"],
                         created_date=p["createdAt"],
                         updated_date=p["updatedAt"],
@@ -183,7 +187,7 @@ def get_listings(
                     )
                     db.session.add(imovel_ativo)
                     db.session.commit()
-    
+
     db.session.commit()
     update_predict(db, locationId, business_type, listing_type)
 
