@@ -27,8 +27,8 @@ POSTGRES_DB = "imoveis"
 
 
 [development]
-DEBUG = true
-max_page = 2
+DEBUG = false
+max_page = -1
 SQLALCHEMY_DATABASE_URI  = 'postgresql://postgres:postgres@localhost:15432/listing'
 force_update = true
 
