@@ -1,5 +1,6 @@
 import pandas as pd
 from dash import Dash
+from math import ceil
 from dash.dash_table import DataTable
 from dash.dependencies import Input, Output
 
@@ -38,6 +39,7 @@ layout = DataTable(
 def init_app(app: Dash) -> Dash:
     @app.callback(
         Output("table", "data"),
+        Output("table", "page_count"),
         Input("filtered_data", "data"),
         Input("table", "sort_by"),
         Input("table", "page_current"),
@@ -47,7 +49,7 @@ def init_app(app: Dash) -> Dash:
         dff = pd.DataFrame(data)
 
         if dff.shape[0] == 0:
-            return []
+            return [], 1
 
         dff["error"] = dff["total_fee"] - dff["total_fee_predict"]
 
@@ -63,8 +65,11 @@ def init_app(app: Dash) -> Dash:
         else:
             dff = dff.sort_values("error")
 
-        return dff.iloc[
-            page_current * page_size : (page_current + 1) * page_size
-        ].to_dict("records")
+        return (
+            dff.iloc[page_current * page_size : (page_current + 1) * page_size].to_dict(
+                "records"
+            ),
+            ceil(dff.shape[0] / page_size),
+        )
 
     return app
