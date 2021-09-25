@@ -37,11 +37,10 @@ def request_page(
         "sec-ch-ua-mobile": "?0",
         "sec-fetch-mode": "cors",
         "origin-ua-mobile": "?0",
+        "referer": f"https://www.{origin}.com.br",
+        "origin": f"https://www.{origin}.com.br",
+        "x-domain": f"www.{origin}.com.br",
     }
-
-    headers["referer"] = f"https://www.{origin}.com.br"
-    headers["origin"] = f"https://www.{origin}.com.br"
-    headers["x-domain"] = f"www.{origin}.com.br"
 
     base_url = f"https://{api}/v2/listings"
 
