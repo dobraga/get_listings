@@ -1,4 +1,5 @@
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
+from sqlalchemy.sql import func
 from datetime import datetime
 from sqlalchemy import JSON
 import uuid
@@ -49,6 +50,11 @@ class Imovel(db.Model):
     updated_date = db.Column(db.DateTime(timezone=False))
 
     total_fee_predict = db.Column(db.Float())
+
+    created = db.Column(TIMESTAMP, server_default=func.now())
+    updated = db.Column(
+        TIMESTAMP, server_default=func.now(), onupdate=func.current_timestamp()
+    )
 
 
 class ImovelAtivo(db.Model):
