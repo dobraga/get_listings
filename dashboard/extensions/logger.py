@@ -6,19 +6,18 @@ def init_app(dash: Dash) -> Dash:
 
     app = dash.server
 
-    if app.config["ENV"] != "development":
+    if app.config["ENV"] == "production":
         gunicorn_logger = logging.getLogger("gunicorn.error")
+        app.logger.addHandler(gunicorn_logger.handlers)
 
-        app.logger.handlers = gunicorn_logger.handlers
-        app.logger.setLevel(logging.INFO)
+    level = logging.DEBUG if app.config["DEBUG"] else logging.INFO
 
-    else:
-        logging.basicConfig(
-            filename="logger.log",
-            format="%(asctime)s %(levelname)8s (%(name)s:%(lineno)s): %(message)s",
-            filemode="w",
-            level=logging.INFO,
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
+    logging.basicConfig(
+        format="%(asctime)s %(levelname)8s (%(name)s:%(lineno)s): %(message)s",
+        level=level,
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+    app.logger.debug(f"Using config: {app.config}")
 
     return dash
