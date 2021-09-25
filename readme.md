@@ -2,6 +2,10 @@
 
 Esse app tem como objetivo capturar dados do ZapImoveis e Vivareal, adicionando a possibilidade da visualização em mapa, um modelo de precificação para identificar os imóveis com melhor custo/benefício e a distância da estação de metro/trem mais próxima.
 
+
+!["Tabela"](img/table.png)
+!["Mapa"](img/mapa.png)
+
 ## Configuração
 
 Criar o arquivo `production.env` no seguinte padrão:
