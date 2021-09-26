@@ -1,15 +1,14 @@
 import logging
 import requests
 from time import sleep
-from flask import current_app
+from dynaconf import settings
 
 log = logging.getLogger(__name__)
 
 
 def list_locations(local: str, origin="vivareal") -> dict:
-    conf = current_app.config
-    api = conf["sites"][origin]["api"]
-    portal = conf["sites"][origin]["portal"]
+    api = settings["sites"][origin]["api"]
+    portal = settings["sites"][origin]["portal"]
 
     headers = {
         "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36",
@@ -33,7 +32,7 @@ def list_locations(local: str, origin="vivareal") -> dict:
     try:
         r = requests.get(base_url, params=query, headers=headers)
         r.raise_for_status()
-        sleep(0.15)
+        sleep(0.5)
     except requests.exceptions.HTTPError as e:
         log.error(e)
         raise e

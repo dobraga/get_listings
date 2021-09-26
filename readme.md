@@ -20,7 +20,7 @@ POSTGRES_PASSWORD=postgres
 POSTGRES_DB=listing
 ```
 
-Para configurar a extração, basta modificar o arquivo `settings.toml`, a única alteração obrigatória neste arquivo é no caso de alteração das configurações do Postgres(usuário, senha ou database). Neste caso, altere a linha [production.SQLALCHEMY_DATABASE_URI] para o padrão `postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@db:5432/{POSTGRES_DB}`
+Para configurar a extração, basta modificar o arquivo `settings.toml`.
 
 ## 1.2. Execução
 

@@ -1,5 +1,6 @@
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from requests import Session, get
+from dynaconf import settings
 from lxml import html
 import pandas as pd
 import logging
@@ -56,9 +57,9 @@ def fetch(session, url_estacao) -> tuple:
         return None, None, None
 
 
-def get_metro(uf: str, config: dict, db):
+def get_metro(uf: str, db):
     uf = uf.lower()
-    urls = config["METRO_TREM"].get(uf)
+    urls = settings["METRO_TREM"].get(uf)
 
     if urls is None:
         log.warning(f"not found metro/train urls for {uf}")

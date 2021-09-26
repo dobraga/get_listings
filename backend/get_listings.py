@@ -1,6 +1,7 @@
 import logging
 import pandas as pd
 from datetime import datetime
+from dynaconf import settings
 from joblib import Parallel, delayed
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -25,11 +26,10 @@ def get_listings(
     listing_type: str,
     df_metro: pd.DataFrame,
     db,
-    config,
     **kwargs,
 ) -> pd.DataFrame:
 
-    force_update = config.get("FORCE_UPDATE", False)
+    force_update = settings.get("FORCE_UPDATE", False)
 
     # Para dados que já foram atualizados no dia da consulta, apenas retorna os dados
     last_update = db.engine.execute(
@@ -80,10 +80,6 @@ def get_listings(
         futures = {
             executor.submit(
                 request_page,
-                max_page=config["MAX_PAGE"],
-                api=config["SITES"][site]["api"],
-                site=config["SITES"][site]["site"],
-                portal=config["SITES"][site]["portal"],
                 origin=site,
                 neighborhood=neighborhood,
                 locationId=locationId,
@@ -93,7 +89,7 @@ def get_listings(
                 business_type=business_type,
                 listing_type=listing_type,
             ): site
-            for site in config["SITES"].keys()
+            for site in settings["SITES"].keys()
         }
 
         for future in as_completed(futures):

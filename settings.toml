@@ -29,11 +29,11 @@ POSTGRES_DB = "imoveis"
 [development]
 DEBUG = false
 max_page = -1
-SQLALCHEMY_DATABASE_URI  = 'postgresql://postgres:postgres@localhost:15432/listing'
+SQLALCHEMY_DATABASE_URI  = '@format postgresql://{env[POSTGRES_USER]}:{env[POSTGRES_PASSWORD]}@localhost:15432/{env[POSTGRES_DB]}'
 force_update = true
 
 [production]
 DEBUG = false
 max_page = -1
-SQLALCHEMY_DATABASE_URI  = 'postgresql://postgres:postgres@db:5432/listing'
+SQLALCHEMY_DATABASE_URI  = '@format postgresql://{env[POSTGRES_USER]}:{env[POSTGRES_PASSWORD]}@db:15432/{env[POSTGRES_DB]}'
 force_update = false

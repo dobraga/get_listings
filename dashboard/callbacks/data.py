@@ -77,10 +77,7 @@ def init_app(app: Dash) -> Dash:
             **selected_location,
             business_type=business_type,
             listing_type=listing_type,
-            df_metro=get_metro(
-                selected_location["stateAcronym"], app.server.config, app.server.db
-            ),
-            config=app.server.config,
+            df_metro=get_metro(selected_location["stateAcronym"], app.server.db),
             db=app.server.db,
         )
 

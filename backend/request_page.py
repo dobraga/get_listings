@@ -2,16 +2,14 @@ import logging
 import requests
 from math import ceil
 from time import sleep
+from dynaconf import settings
+from numpy.random import normal
 
 
 log = logging.getLogger(__name__)
 
 
 def request_page(
-    max_page,
-    api,
-    site,
-    portal,
     origin: str,
     neighborhood,
     locationId,
@@ -26,7 +24,12 @@ def request_page(
     Request all pages for one site
     """
 
-    log.info(f"Buscando dados do {portal}")
+    log.info(f"Buscando dados do {origin}")
+
+    max_page = settings["MAX_PAGE"]
+    api = settings["SITES"][origin]["api"]
+    site = settings["SITES"][origin]["site"]
+    portal = settings["SITES"][origin]["portal"]
 
     headers = {
         "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
@@ -80,10 +83,11 @@ def request_page(
                 r.raise_for_status()
                 log.info(f"Getting page {page+1}/{max_page} from {portal} OK")
                 data += r.json()["search"]["result"]["listings"]
-                sleep(0.15)
+                sleep(abs(normal(0.3, 0.5, 1))[0])
 
             except requests.exceptions.HTTPError as e:
                 log.error(f"Getting page {page+1}/{max_page} from {portal}: {e}")
+                break
 
         log.info(f"Busca dos dados do {portal} foi finalizada")
 
