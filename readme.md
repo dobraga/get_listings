@@ -48,7 +48,13 @@ POSTGRES_PASSWORD=postgres
 POSTGRES_DB=listing
 ```
 
-### 1.3.1. Migrações
+### 1.3.1. Banco de dados
+
+``` sh
+docker-compose  -f "docker-compose.yml" up -d --build db
+```
+
+### 1.3.2. Migrações
 
 ```sh
 export FLASK_APP=dashboard:create_server
@@ -57,7 +63,7 @@ flask db migrate
 flask db upgrade
 ```
 
-### 1.3.2. Dashboard
+### 1.3.3. Dashboard
 
 Para execução apenas do Dashboard:
 
