@@ -3,7 +3,6 @@ import requests
 from math import ceil
 from time import sleep
 from dynaconf import settings
-from numpy.random import normal
 
 
 log = logging.getLogger(__name__)
@@ -83,7 +82,7 @@ def request_page(
                 r.raise_for_status()
                 log.info(f"Getting page {page+1}/{max_page} from {portal} OK")
                 data += r.json()["search"]["result"]["listings"]
-                sleep(abs(normal(0.3, 0.5, 1))[0])
+                sleep(settings["SITES"][origin]["sleep"])
 
             except requests.exceptions.HTTPError as e:
                 log.error(f"Getting page {page+1}/{max_page} from {portal}: {e}")

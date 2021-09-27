@@ -19,11 +19,13 @@ POSTGRES_DB = "imoveis"
         site = "https://www.vivareal.com.br"
         api = "glue-api.vivareal.com"
         portal = "VIVAREAL"
+        sleep = 0.6
 
     [default.sites.zapimoveis]
         site = "https://www.zapimoveis.com.br"
         api = "glue-api.zapimoveis.com.br"
         portal = "ZAP"
+        sleep = 0.2
 
 
 [development]
