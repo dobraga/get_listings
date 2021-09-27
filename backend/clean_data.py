@@ -60,8 +60,13 @@ def clean_data(
 
     parsed_columns["price"] = to_numeric(pricingInfos.get("price"))
     parsed_columns["condo_fee"] = to_numeric(pricingInfos.get("monthlyCondoFee"))
-
     parsed_columns["total_fee"] = parsed_columns["price"]
+
+    if business_type == "RENTAL":
+        parsed_columns["period"] = pricingInfos["rentalInfo"]["period"]
+        if parsed_columns["period"] == "DAILY":
+            parsed_columns["total_fee"] *= 30
+
     if parsed_columns["condo_fee"] is not None:
         parsed_columns["total_fee"] = (
             parsed_columns["price"] + parsed_columns["condo_fee"]
