@@ -68,9 +68,7 @@ def clean_data(
             parsed_columns["total_fee"] *= 30
 
     if parsed_columns["condo_fee"] is not None:
-        parsed_columns["total_fee"] = (
-            parsed_columns["price"] + parsed_columns["condo_fee"]
-        )
+        parsed_columns["total_fee"] += parsed_columns["condo_fee"]
 
     address = listing["address"]
 
