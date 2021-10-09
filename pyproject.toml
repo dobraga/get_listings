@@ -5,7 +5,7 @@ description = ""
 authors = ["Douglas Braga <douglasmartinsbraga@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<4.0"
+python = ">=3.9,<4.0"
 geopy = "2.*"
 pandas = "1.*"
 scikit-learn = "0.*"
@@ -23,6 +23,7 @@ psycopg2-binary = "2.*"
 dash-bootstrap-components = "0.*"
 dash-table = "5.*"
 lightgbm = "3.*"
+toml = "^0.10.2"
 
 [tool.poetry.dev-dependencies]
 mypy = "0.*"
@@ -35,6 +36,7 @@ ipywidgets = "7.*"
 optuna = "2.*"
 mlflow = "1.*"
 xgboost = "1.*"
+types-requests = "^2.25.9"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
