@@ -6,7 +6,7 @@ from dynaconf import settings
 log = logging.getLogger(__name__)
 
 
-def list_locations(local: str, origin="vivareal") -> dict:
+def list_locations(local: str, origin="zapimoveis") -> dict:
     api = settings["sites"][origin]["api"]
     portal = settings["sites"][origin]["portal"]
 
