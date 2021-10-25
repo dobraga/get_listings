@@ -19,7 +19,7 @@ POSTGRES_DB = "imoveis"
         site = "https://www.vivareal.com.br"
         api = "glue-api.vivareal.com"
         portal = "VIVAREAL"
-        sleep = 0.6
+        sleep = 0.2
 
     [default.sites.zapimoveis]
         site = "https://www.zapimoveis.com.br"
@@ -30,12 +30,12 @@ POSTGRES_DB = "imoveis"
 
 [development]
 DEBUG = false
-max_page = -1
+max_page = 50
 SQLALCHEMY_DATABASE_URI  = '@format postgresql://{env[POSTGRES_USER]}:{env[POSTGRES_PASSWORD]}@localhost:15432/{env[POSTGRES_DB]}'
 force_update = true
 
 [production]
 DEBUG = false
-max_page = -1
-SQLALCHEMY_DATABASE_URI  = '@format postgresql://{env[POSTGRES_USER]}:{env[POSTGRES_PASSWORD]}@db:15432/{env[POSTGRES_DB]}'
+max_page = 50
+SQLALCHEMY_DATABASE_URI  = '@format postgresql://{env[POSTGRES_USER]}:{env[POSTGRES_PASSWORD]}@db:5432/{env[POSTGRES_DB]}'
 force_update = false
