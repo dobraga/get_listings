@@ -1,4 +1,4 @@
-FROM python:3.8-slim
+FROM python:3.9.7-slim
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -25,4 +25,4 @@ RUN pip install -r requirements.txt --require-hashes
 RUN export FLASK_APP=dashboard:create_server
 RUN flask db init || flask db migrate || flask db upgrade || true
 
-CMD gunicorn --bind 0.0.0.0:$PORT "wsgi:application" --log-level=debug --timeout 0
+CMD gunicorn --bind 0.0.0.0:$PORT "wsgi:application" --log-level=info --timeout 0
