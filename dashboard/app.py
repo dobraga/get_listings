@@ -7,10 +7,7 @@ from dashboard import layout, extensions, pages, callbacks
 def create_app() -> Dash:
     dash = Dash(
         __name__,
-        external_stylesheets=[
-            dbc.themes.BOOTSTRAP,
-            "https://use.fontawesome.com/releases/v5.12.1/css/all.css",
-        ],
+        external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
         suppress_callback_exceptions=True,
     )
 
