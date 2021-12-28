@@ -68,5 +68,5 @@ flask db upgrade
 Para execução apenas do Dashboard:
 
 ``` sh
-python dashboard
+python dashboard.py
 ```
