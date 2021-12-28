@@ -41,7 +41,11 @@ def list_locations(local: str, origin="zapimoveis") -> dict:
 
     locations = [l["address"] for l in locations]
 
-    locations = {v["locationId"] + f">{v['stateAcronym']}": v for v in locations}
+    locations = {
+        v["locationId"] + f">{v['stateAcronym']}": v
+        for v in locations
+        if v["locationId"]
+    }
 
     def set_name(key: str) -> str:
         splitted = key.split(">")
