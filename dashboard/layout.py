@@ -4,6 +4,7 @@ import dash_bootstrap_components as dbc
 from dashboard.pages import sidebar
 from dashboard.styles import CONTENT_STYLE
 
+# TODO: Melhoria no css das páginas
 navbar = dbc.Navbar(
     html.Div(
         [
