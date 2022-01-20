@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 from dash import Dash
 from math import ceil
@@ -6,10 +5,7 @@ from dash.exceptions import PreventUpdate
 from dash.dependencies import Input, Output, State
 
 
-from backend.metro import get_metro
-from backend.location import list_locations
-from backend.get_listings import get_listings
-
+from backend import metro, location, get_listings
 from dashboard.utils import depara_tp_contrato, depara_tp_listings
 
 
@@ -31,7 +27,7 @@ def init_app(app: Dash) -> Dash:
         if not value:
             raise PreventUpdate
 
-        locations = list_locations(value)
+        locations = location.list_locations(value)
 
         if locations:
             return (
@@ -73,11 +69,11 @@ def init_app(app: Dash) -> Dash:
         listing_type = [o for o in depara_tp_listings if o["value"] == listing_value]
         listing_type = listing_type[0]["value"]
 
-        df = get_listings(
+        df = get_listings.get_listings(
             **selected_location,
             business_type=business_type,
             listing_type=listing_type,
-            df_metro=get_metro(selected_location["stateAcronym"], app.server.db),
+            df_metro=metro.get_metro(selected_location["stateAcronym"], app.server.db),
             db=app.server.db,
         )
 
