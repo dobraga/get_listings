@@ -1,7 +1,6 @@
 import logging
 import pandas as pd
 from datetime import datetime
-from dynaconf import settings
 from joblib import Parallel, delayed
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -12,6 +11,7 @@ from backend.update_predict import update_predict
 from backend.get_activated_listings import get_activated_listings
 
 from dashboard.models import Imovel, ImovelAtivo
+from backend.settings import settings
 
 log = logging.getLogger(__name__)
 

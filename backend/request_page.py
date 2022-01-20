@@ -3,7 +3,8 @@ import requests
 from math import ceil
 from time import sleep
 from typing import Union
-from dynaconf import settings
+
+from backend.settings import settings
 
 
 log = logging.getLogger(__name__)

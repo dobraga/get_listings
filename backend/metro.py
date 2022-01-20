@@ -1,10 +1,10 @@
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from requests import Session, get
-from dynaconf import settings
 from lxml import html
 import pandas as pd
 import logging
 
+from backend.settings import settings
 from dashboard.models import Metro
 from dashboard.extensions.serializer import MetroSchema
 

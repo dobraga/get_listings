@@ -1,7 +1,9 @@
 import logging
 import requests
 from time import sleep
-from dynaconf import settings
+
+from backend.settings import settings
+
 
 log = logging.getLogger(__name__)
 

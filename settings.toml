@@ -31,11 +31,11 @@ POSTGRES_DB = "imoveis"
 [development]
 DEBUG = false
 max_page = 50
-SQLALCHEMY_DATABASE_URI  = '@format postgresql://{env[POSTGRES_USER]}:{env[POSTGRES_PASSWORD]}@localhost:15432/{env[POSTGRES_DB]}'
+SQLALCHEMY_DATABASE_URI  = '@jinja postgresql://{{env.POSTGRES_USER}}:{{env.POSTGRES_PASSWORD}}@localhost:15432/{{env.POSTGRES_DB}}'
 force_update = true
 
 [production]
 DEBUG = false
 max_page = 50
-SQLALCHEMY_DATABASE_URI  = '@format postgresql://{env[POSTGRES_USER]}:{env[POSTGRES_PASSWORD]}@db:5432/{env[POSTGRES_DB]}'
+SQLALCHEMY_DATABASE_URI  = '@jinja postgresql://{{env.POSTGRES_USER}}:{{env.POSTGRES_PASSWORD}}@db:5432/{{env.POSTGRES_DB}}'
 force_update = false
