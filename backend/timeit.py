@@ -16,7 +16,6 @@ class timeit:
     def __exit__(self, type, value, traceback):
         finished = round(time() - self.ini, 0)
         if value is None:
-            self.log.info(f"{self.text} - finished in {finished} seconds")
             if self.level_log == "info":
                 self.log.info(f"{self.text} - finished in {finished} seconds")
             else:

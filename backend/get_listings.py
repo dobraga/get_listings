@@ -74,7 +74,7 @@ def get_listings(
                             force_update
                             or imovel.updated_date.date() != parsed.updated_date.date()
                         ):
-                            with timeit(f"Update {url}", log, "info"):
+                            with timeit(f"Update {url}", log):
                                 imovel.raw = parsed.raw
                                 imovel.title = parsed.title
                                 imovel.usable_area = parsed.usable_area
@@ -102,7 +102,7 @@ def get_listings(
                             log.debug(f"not updated {url}")
 
                     else:
-                        with timeit(f"creating {url}", log, "info"):
+                        with timeit(f"creating {url}", log):
                             db.session.add(parsed)
                             db.session.commit()
 
