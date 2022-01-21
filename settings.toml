@@ -29,8 +29,8 @@ POSTGRES_DB = "imoveis"
 
 
 [development]
-DEBUG = false
-max_page = 50
+DEBUG = true
+max_page = 1
 SQLALCHEMY_DATABASE_URI  = '@jinja postgresql://{{env.POSTGRES_USER}}:{{env.POSTGRES_PASSWORD}}@localhost:15432/{{env.POSTGRES_DB}}'
 force_update = true
 
