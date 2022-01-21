@@ -1,3 +1,4 @@
+from marshmallow import EXCLUDE
 from flask_marshmallow import Marshmallow
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 
@@ -17,14 +18,16 @@ class ImovelSchema(SQLAlchemyAutoSchema):
         model = Imovel
         load_instance = True
         transient = True
+        unknown = EXCLUDE
         fields = (
+            "raw",
             "title",
             "url",
             "business_type",
             "listing_type",
             "images",
             "neighborhood",
-            "locationId",
+            "location_id",
             "state",
             "city",
             "zone",
@@ -45,7 +48,6 @@ class ImovelSchema(SQLAlchemyAutoSchema):
             "condo_fee",
             "total_fee",
             "total_fee_predict",
-            "created_date",
             "estacao",
             "lat_metro",
             "lon_metro",
@@ -61,4 +63,5 @@ class MetroSchema(SQLAlchemyAutoSchema):
         model = Metro
         load_instance = True
         transient = True
+        unknown = EXCLUDE
         fields = ("linha", "estacao", "lat", "lng")

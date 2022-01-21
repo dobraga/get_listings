@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import logging
 
+from backend.timeit import timeit
+
 log = logging.getLogger(__name__)
 
 
@@ -17,121 +19,135 @@ def onehot(values: pd.Series, options: list, prefix: str = None) -> pd.Series:
 
 
 def preprocess(df: pd.DataFrame) -> tuple:
-    log.info("Preprocessamento para modelagem iniciado")
-    df = df.copy()
+    with timeit("Preprocessamento", log, "info"):
+        df = df.copy()
 
-    df["neighborhood"] = df["neighborhood"].map(
-        df.groupby("neighborhood")["total_fee"].median()
-    )
+        df["neighborhood"] = df["neighborhood"].map(
+            df.groupby("neighborhood")["total_fee"].median()
+        )
 
-    y = df.pop("total_fee")
+        y = df.pop("total_fee")
 
-    X = df[
-        [
-            "neighborhood",
-            "url",
+        X = df[
+            [
+                "neighborhood",
+                "url",
+                "usable_area",
+                "floors",
+                "type_unit",
+                "bedrooms",
+                "bathrooms",
+                "suites",
+                "parking_spaces",
+                "amenities",
+                "address_lat",
+                "address_lon",
+                "estacao",
+                "distance",
+                "created_date",
+                "updated_date",
+            ]
+        ].set_index("url")
+
+        #
+        # Colunas Numéricas
+        #
+        numeric_columns = [
             "usable_area",
             "floors",
-            "type_unit",
             "bedrooms",
             "bathrooms",
             "suites",
             "parking_spaces",
-            "amenities",
             "address_lat",
             "address_lon",
-            "estacao",
             "distance",
-            "created_date",
-            "updated_date",
         ]
-    ].set_index("url")
+        X[numeric_columns] = X[numeric_columns].astype(float).fillna(-999)
 
-    #
-    # Colunas Numéricas
-    #
-    numeric_columns = [
-        "usable_area",
-        "floors",
-        "bedrooms",
-        "bathrooms",
-        "suites",
-        "parking_spaces",
-        "address_lat",
-        "address_lon",
-        "distance",
-    ]
-    X[numeric_columns] = X[numeric_columns].astype(float).fillna(-999)
+        #
+        # Transforma datas de criação e atualização em features
+        #
+        X["qtd_days_created"] = (
+            (
+                (datetime.now() - pd.to_datetime(X["created_date"]))
+                / np.timedelta64(1, "D")
+            )
+            .round()
+            .fillna(-1)
+            .astype(int)
+        )
+        X["qtd_days_updated"] = (
+            (
+                (datetime.now() - pd.to_datetime(X["updated_date"]))
+                / np.timedelta64(1, "D")
+            )
+            .round()
+            .fillna(-1)
+            .astype(int)
+        )
 
-    #
-    # Transforma datas de criação e atualização em features
-    #
-    X["qtd_days_created"] = (
-        ((datetime.now() - pd.to_datetime(X["created_date"])) / np.timedelta64(1, "D"))
-        .round()
-        .astype(int)
-    )
-    X["qtd_days_updated"] = (
-        ((datetime.now() - pd.to_datetime(X["updated_date"])) / np.timedelta64(1, "D"))
-        .round()
-        .astype(int)
-    )
+        #
+        # Transforma colunas não numéricas
+        #
 
-    #
-    # Transforma colunas não numéricas
-    #
+        # Type Unit
+        valid_type_unit = ["APARTMENT", "HOME", "CONDOMINIUM", "PENTHOUSE", "FLAT"]
+        X.loc[~X.type_unit.isin(valid_type_unit), "type_unit"] = "OTHERS"
+        dummies_type_units = onehot(
+            X.type_unit, valid_type_unit + ["OTHERS"], "type_unit"
+        )
+        X[dummies_type_units.columns] = dummies_type_units.values
 
-    # Type Unit
-    valid_type_unit = ["APARTMENT", "HOME", "CONDOMINIUM", "PENTHOUSE", "FLAT"]
-    X.loc[~X.type_unit.isin(valid_type_unit), "type_unit"] = "OTHERS"
-    dummies_type_units = onehot(X.type_unit, valid_type_unit + ["OTHERS"], "type_unit")
-    X[dummies_type_units.columns] = dummies_type_units.values
+        # Estação de trem/metrô
+        estacoes_validas = [
+            "Estação_Jardim_Oceânico",
+            "Estação_Uruguai",
+            "Estação_Botafogo/Coca-Cola",
+            "Estação_Afonso_Pena",
+            "Estação_Saens_Peña",
+            "Estação_Flamengo",
+            "Estação_São_Francisco_Xavier_(Metrô_Rio)",
+            "Estação_Madureira",
+        ]
+        # estacoes = X.loc[X.estacao != "", "estacao"].value_counts(normalize=True)
+        # estacoes_validas = list(estacoes[estacoes > 0.05].index)
+        X.loc[~X.estacao.isin(estacoes_validas), "estacao"] = "OTHERS"
+        dummies_estacoes = onehot(X.type_unit, estacoes_validas + ["OTHERS"], "estação")
+        X[dummies_estacoes.columns] = dummies_estacoes.values
 
-    # Estação de trem/metrô
-    estacoes_validas = [
-        "Estação_Jardim_Oceânico",
-        "Estação_Uruguai",
-        "Estação_Botafogo/Coca-Cola",
-        "Estação_Afonso_Pena",
-        "Estação_Saens_Peña",
-        "Estação_Flamengo",
-        "Estação_São_Francisco_Xavier_(Metrô_Rio)",
-        "Estação_Madureira",
-    ]
-    # estacoes = X.loc[X.estacao != "", "estacao"].value_counts(normalize=True)
-    # estacoes_validas = list(estacoes[estacoes > 0.05].index)
-    X.loc[~X.estacao.isin(estacoes_validas), "estacao"] = "OTHERS"
-    dummies_estacoes = onehot(X.type_unit, estacoes_validas + ["OTHERS"], "estação")
-    X[dummies_estacoes.columns] = dummies_estacoes.values
+        # Amenities
+        valid_amenities = [
+            "ELEVATOR",
+            "POOL",
+            "BARBECUE_GRILL",
+            "PARTY_HALL",
+            "PLAYGROUND",
+            "GATED_COMMUNITY",
+            "BALCONY",
+            "INTERCOM",
+            "KITCHEN_CABINETS",
+            "GYM",
+            "SAUNA",
+            "FURNISHED",
+            "SPORTS_COURT",
+        ]
+        amenities = X.amenities.explode()
+        amenities[~amenities.isin([valid_amenities])] = "OTHERS"
+        dummies_amenities = (
+            onehot(amenities, valid_amenities, "amenity").groupby(level=0).max()
+        )
+        X[dummies_amenities.columns] = dummies_amenities.values
 
-    # Amenities
-    valid_amenities = [
-        "ELEVATOR",
-        "POOL",
-        "BARBECUE_GRILL",
-        "PARTY_HALL",
-        "PLAYGROUND",
-        "GATED_COMMUNITY",
-        "BALCONY",
-        "INTERCOM",
-        "KITCHEN_CABINETS",
-        "GYM",
-        "SAUNA",
-        "FURNISHED",
-        "SPORTS_COURT",
-    ]
-    amenities = X.amenities.explode()
-    amenities[~amenities.isin([valid_amenities])] = "OTHERS"
-    dummies_amenities = (
-        onehot(amenities, valid_amenities, "amenity").groupby(level=0).max()
-    )
-    X[dummies_amenities.columns] = dummies_amenities.values
+        # Remove colunas
+        X = X.drop(
+            columns=[
+                "type_unit",
+                "estacao",
+                "created_date",
+                "updated_date",
+                "amenities",
+            ]
+        )
 
-    # Remove colunas
-    X = X.drop(
-        columns=["type_unit", "estacao", "created_date", "updated_date", "amenities"]
-    )
-
-    log.info("Preprocessamento para modelagem finalizado")
-
-    return X, y
+        return X, y

@@ -1,10 +1,14 @@
 from geopy.distance import distance
 import pandas as pd
 
+from dashboard.extensions.serializer import ImovelSchema
+
+IS = ImovelSchema()
+
 
 def get_min_dist(df_metro, lat, lng):
     """
-    Pega estaçao mais proxima da latlong passada
+    Pega estação mais proxima da latlong passada
     """
     X = df_metro.copy()
     X["distance"] = X[["lat", "lng"]].apply(
@@ -35,10 +39,19 @@ def to_numeric(value):
         return None
 
 
-def clean_data(
-    data: dict, business_type: str = None, df_metro: pd.DataFrame = pd.DataFrame()
-) -> tuple:
-    parsed_columns = {}
+def clean_data(data: dict, df_metro: pd.DataFrame = pd.DataFrame()) -> ImovelSchema:
+    parsed_columns = {
+        "raw": data,
+        "origin": data["origin"],
+        "url": data["url"],
+        "location_id": data["locationId"],
+        "listing_type": data["listing_type"],
+        "business_type": data["business_type"],
+        "zone": data["zone"],
+        "city": data["city"],
+        "state": data["state"],
+        "neighborhood": data["neighborhood"],
+    }
 
     listing = data["listing"]
 
@@ -55,14 +68,14 @@ def clean_data(
     parsed_columns["parking_spaces"] = to_numeric(listing["parkingSpaces"]) or 0
 
     pricingInfos = [
-        p for p in listing["pricingInfos"] if p["businessType"] == business_type
+        p for p in listing["pricingInfos"] if p["businessType"] == data["business_type"]
     ][0]
 
     parsed_columns["price"] = to_numeric(pricingInfos.get("price"))
     parsed_columns["condo_fee"] = to_numeric(pricingInfos.get("monthlyCondoFee"))
     parsed_columns["total_fee"] = parsed_columns["price"]
 
-    if business_type == "RENTAL":
+    if data["business_type"] == "RENTAL":
         parsed_columns["period"] = pricingInfos["rentalInfo"]["period"]
         if parsed_columns["period"] == "DAILY":
             parsed_columns["total_fee"] *= 30
@@ -118,4 +131,4 @@ def clean_data(
     parsed_columns["createdAt"] = pd.to_datetime(listing["createdAt"])
     parsed_columns["updatedAt"] = pd.to_datetime(listing["updatedAt"])
 
-    return data, parsed_columns
+    return IS.load(parsed_columns)
