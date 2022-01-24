@@ -38,4 +38,3 @@ force_update = true
 DEBUG = false
 max_page = 50
 SQLALCHEMY_DATABASE_URI  = '@format postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@db:5432/{POSTGRES_DB}'
-force_update = true
