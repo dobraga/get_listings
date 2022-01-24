@@ -59,7 +59,7 @@ def fetch(session, url_estacao) -> tuple:
 
 def get_metro(uf: str, db):
     uf = uf.lower()
-    urls = settings["METRO_TREM"].get(uf)
+    urls = settings["metro_trem"].get(uf)
 
     if urls is None:
         log.warning(f"not found metro/train urls for {uf}")

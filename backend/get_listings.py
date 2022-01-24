@@ -58,7 +58,7 @@ def get_listings(
                     business_type=business_type,
                     listing_type=listing_type,
                 ): site
-                for site in settings["SITES"].keys()
+                for site in settings["sites"].keys()
             }
 
             for future in as_completed(futures):
@@ -72,6 +72,8 @@ def get_listings(
                     if imovel:
                         if (
                             force_update
+                            or imovel.updated_date is None
+                            or parsed.updated_date is None
                             or imovel.updated_date.date() != parsed.updated_date.date()
                         ):
                             with timeit(f"Update {url}", log):

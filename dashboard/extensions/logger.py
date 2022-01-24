@@ -3,6 +3,9 @@ from typing import Any
 from dash import Dash
 
 
+log = logging.getLogger(__name__)
+
+
 def init_app(dash: Dash) -> Dash:
 
     app = dash.server
@@ -13,7 +16,7 @@ def init_app(dash: Dash) -> Dash:
         "datefmt": "%Y-%m-%d %H:%M:%S",
     }
 
-    if app.config["ENV"] == "production":
+    if app.config["FLASK_ENV"] == "production":
         gunicorn_logger = logging.getLogger("gunicorn.error")
         app.logger.handlers = gunicorn_logger.handlers
         app.logger.setLevel(gunicorn_logger.level)

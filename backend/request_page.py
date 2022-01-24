@@ -29,10 +29,10 @@ def request_page(
     """
 
     with timeit(f"Busca dados do {origin}", log, "info"):
-        max_page = max_page or settings["MAX_PAGE"]
-        api = settings["SITES"][origin]["api"]
-        site = settings["SITES"][origin]["site"]
-        portal = settings["SITES"][origin]["portal"]
+        max_page = max_page or settings["max_page"]
+        api = settings["sites"][origin]["api"]
+        site = settings["sites"][origin]["site"]
+        portal = settings["sites"][origin]["portal"]
 
         headers = {
             "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
@@ -99,7 +99,7 @@ def request_page(
                         r = requests.get(base_url, params=query, headers=headers)
                         r.raise_for_status()
                         data += r.json()["search"]["result"]["listings"]
-                        sleep(settings["SITES"][origin]["sleep"])
+                        sleep(settings["sites"][origin]["sleep"])
 
                     except requests.exceptions.HTTPError as e:
                         log.error(f"Getting page {page}/{max_page} from {portal}: {e}")
