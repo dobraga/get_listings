@@ -12,15 +12,17 @@ class timeit:
     def __enter__(self):
         self.ini = time()
         self.log.debug(f"{self.text} - started")
+        return self
 
     def __exit__(self, type, value, traceback):
-        finished = round(time() - self.ini, 0)
+        elapsed = int(round(time() - self.ini, 0))
+        self.elapsed = elapsed
         if value is None:
             if self.level_log == "info":
-                self.log.info(f"{self.text} - finished in {finished} seconds")
+                self.log.info(f"{self.text} - finished in {elapsed} seconds")
             else:
-                self.log.debug(f"{self.text} - finished in {finished} seconds")
+                self.log.debug(f"{self.text} - finished in {elapsed} seconds")
         else:
             self.log.error(
-                f"{self.text} - finished with errors in {finished} seconds: {value}"
+                f"{self.text} - finished with errors in {elapsed} seconds: {value}"
             )
