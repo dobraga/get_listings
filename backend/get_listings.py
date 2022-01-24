@@ -37,7 +37,7 @@ def get_listings(
         and last_update.date() == datetime.today().date()
     ):
         return get_activated_listings(
-            bd.engine, locationId, business_type, listing_type
+            db.engine, locationId, business_type, listing_type
         )
 
     # Caso contrário, limpa dados dos imoveis ativos e realiza a busca dos imoveis
