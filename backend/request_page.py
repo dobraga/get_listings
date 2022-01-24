@@ -2,7 +2,7 @@ import logging
 import requests
 from math import ceil
 from time import sleep
-from typing import Union
+from typing import Callable, Union
 
 from backend.timeit import timeit
 from backend.settings import settings
@@ -22,6 +22,7 @@ def request_page(
     listing_type: str,
     size: int = 24,
     max_page: int = None,
+    callback: Callable = lambda x, **kwargs: x,
     **kwargs,
 ) -> list:
     """
@@ -29,6 +30,7 @@ def request_page(
     """
 
     with timeit(f"Busca dados do {origin}", log, "info"):
+        default_sleep = settings["sites"][origin]["sleep"]
         max_page = max_page or settings["max_page"]
         api = settings["sites"][origin]["api"]
         site = settings["sites"][origin]["site"]
@@ -66,6 +68,7 @@ def request_page(
         }
 
         default_values = {
+            "site": site,
             "neighborhood": neighborhood,
             "locationId": locationId,
             "state": state,
@@ -89,26 +92,32 @@ def request_page(
                 max_page = total_pages
             log.info(f"{portal} getting {max_page} pages")
 
-            data = []
+            data: list = []
             for page in range(1, max_page + 1):
-                with timeit(
-                    f"Getting page {page}/{max_page} from {portal} OK", log, "info"
-                ):
-                    try:
+                try:
+                    with timeit(
+                        f"Getting page {page}/{max_page} from {portal} OK", log, "info"
+                    ) as time:
                         query["from"] = page * query["size"]
                         r = requests.get(base_url, params=query, headers=headers)
                         r.raise_for_status()
-                        data += r.json()["search"]["result"]["listings"]
-                        sleep(settings["sites"][origin]["sleep"])
+                        new_data = r.json()["search"]["result"]["listings"]
+                        new_data = [
+                            callback(dict(d, **default_values), **kwargs)
+                            for d in new_data
+                        ]
+                        data += new_data
 
-                    except requests.exceptions.HTTPError as e:
-                        log.error(f"Getting page {page}/{max_page} from {portal}: {e}")
-                        break
+                    to_sleep = default_sleep - time.elapsed
+                    if to_sleep > 0:
+                        log.debug(
+                            f"Getting page {page}/{max_page} from {portal} slept {to_sleep} seconds"
+                        )
+                        sleep(to_sleep)
 
-            data = [
-                dict(d, **default_values, **{"url": site + d["link"]["href"]})
-                for d in data
-            ]
+                except requests.exceptions.HTTPError as e:
+                    log.error(f"Getting page {page}/{max_page} from {portal}: {e}")
+                    break
 
             return data
 

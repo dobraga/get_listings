@@ -150,4 +150,6 @@ def preprocess(df: pd.DataFrame) -> tuple:
             ]
         )
 
+        log.debug(f"shape: {X.shape}, columns: {X.columns.tolist()}")
+
         return X, y

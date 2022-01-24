@@ -39,11 +39,17 @@ def to_numeric(value):
         return None
 
 
-def clean_data(data: dict, df_metro: pd.DataFrame = pd.DataFrame()) -> ImovelSchema:
+def clean_data(
+    data: dict, site=None, df_metro: pd.DataFrame = pd.DataFrame()
+) -> ImovelSchema:
+
+    site = site or data["site"]
+
     parsed_columns = {
         "raw": data,
         "origin": data["origin"],
-        "url": data["url"],
+        "site": site,
+        "url": site + data["link"]["href"],
         "location_id": data["locationId"],
         "listing_type": data["listing_type"],
         "business_type": data["business_type"],
