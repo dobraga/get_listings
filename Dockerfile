@@ -11,10 +11,10 @@ RUN apt-get update && \
     locales \
     locales-all
 
+COPY ./production.env /app/.env
 COPY ./backend /app/backend
 COPY ./dashboard /app/dashboard
 COPY ./requirements.txt /app/
-COPY ./production.env /app/
 COPY ./settings.toml /app/
 COPY ./wsgi.py /app/
 COPY ./data /app/data
