@@ -38,7 +38,7 @@ mlflow = "1.*"
 xgboost = "1.*"
 types-requests = "*"
 pytest = "*"
-types-toml = "^0.10.3"
+types-toml = "*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
