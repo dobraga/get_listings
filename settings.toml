@@ -4,7 +4,7 @@ FLASK_ENV = '@jinja {{env.FLASK_ENV}}'
 FLASK_DEBUG = '@jinja {{env.FLASK_DEBUG}}'
 PORT = '@jinja {{env.PORT}}'
 SQLALCHEMY_TRACK_MODIFICATIONS = false
-POSTGRES_DB = "imoveis"
+SQLALCHEMY_DATABASE_URI  = '@jinja postgresql://{{env.POSTGRES_USER}}:{{env.POSTGRES_PASSWORD}}@{{env.POSTGRES_HOST}}:{{env.POSTGRES_PORT}}/{{env.POSTGRES_DB}}'
 
 [default.metro_trem]
 [default.metro_trem.rj]
@@ -32,14 +32,13 @@ POSTGRES_DB = "imoveis"
         sleep = 0.2
 
 
+
 [development]
 DEBUG = true
 max_page = 1
-SQLALCHEMY_DATABASE_URI  = '@jinja postgresql://{{env.POSTGRES_USER}}:{{env.POSTGRES_PASSWORD}}@localhost:15432/{{env.POSTGRES_DB}}'
 force_update = true
 
 [production]
 DEBUG = false
 max_page = 50
-SQLALCHEMY_DATABASE_URI  = '@jinja postgresql://{{env.POSTGRES_USER}}:{{env.POSTGRES_PASSWORD}}@db:5432/{{env.POSTGRES_DB}}'
-force_update = true
+force_update = false
