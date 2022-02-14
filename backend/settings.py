@@ -7,6 +7,3 @@ settings = Dynaconf(
     environments=True,
     load_dotenv=True,
 )
-
-
-pprint(dict(settings))
