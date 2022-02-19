@@ -82,7 +82,8 @@ def test_get_listings():
         "status",
     ]
 
-    imoveis_vivareal[0]["locationId"]
+    listing = imoveis_vivareal[0]
+    parsed = clean_data.clean_data(listing)
 
-    parsed = clean_data.clean_data(imoveis_vivareal[0])
-    parsed.location_id
+    assert parsed.created_date
+    assert parsed.updated_date
