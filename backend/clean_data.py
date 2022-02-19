@@ -128,7 +128,9 @@ def clean_data(data: dict, df_metro: pd.DataFrame = pd.DataFrame()) -> ImovelSch
             for i in data["medias"]
         ]
 
-    parsed_columns["created_at"] = pd.to_datetime(listing["createdAt"])
-    parsed_columns["updated_at"] = pd.to_datetime(listing["updatedAt"])
+    parsed_columns["created_date"], parsed_columns["updated_date"] = (
+        listing["createdAt"],
+        listing["updatedAt"],
+    )
 
     return IS.load(parsed_columns)
