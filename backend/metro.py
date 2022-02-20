@@ -1,5 +1,6 @@
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from requests import Session, get
+from requests import Session as Session, get
+from sqlalchemy import select
 from lxml import html
 import pandas as pd
 import logging
@@ -66,7 +67,8 @@ def get_metro(uf: str, db):
         return pd.DataFrame()
     urls = urls["urls"]
 
-    metros = Metro.query.filter_by(uf=uf).all()
+    with db.engine.connect() as c:
+        metros = c.execute(select(Metro)).all()
 
     if metros:
         return pd.DataFrame(ms.dump(metros))
