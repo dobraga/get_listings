@@ -8,7 +8,7 @@ from dash.dependencies import Input, Output
 layout = DataTable(
     id="table",
     columns=[
-        {"name": "URL", "id": "url"},
+        {"name": "Título", "id": "title", "type": "text", "presentation": "markdown"},
         {"name": "Área Útil", "id": "usable_area"},
         {"name": "Tipo", "id": "type_unit"},
         {"name": "Estação", "id": "estacao"},
@@ -25,7 +25,7 @@ layout = DataTable(
     sort_by=[],
     style_cell={"textOverflow": "ellipsis"},
     style_cell_conditional=[
-        {"if": {"column_id": "url"}, "maxWidth": 50, "textAlign": "left"},
+        {"if": {"column_id": "title"}, "maxWidth": 30, "textAlign": "left"},
         {"if": {"column_id": "usable_area"}, "maxWidth": 20},
         {"if": {"column_id": "type_unit"}, "maxWidth": 20, "textAlign": "left"},
         {"if": {"column_id": "estacao"}, "maxWidth": 50, "textAlign": "left"},
@@ -37,7 +37,7 @@ layout = DataTable(
 
 
 def init_app(app: Dash) -> Dash:
-    cols = ["url", "usable_area", "type_unit", "estacao"]
+    cols = ["title", "usable_area", "type_unit", "estacao"]
     cols += ["distance", "total_fee", "total_fee_predict"]
 
     @app.callback(
@@ -68,6 +68,9 @@ def init_app(app: Dash) -> Dash:
         else:
             dff = dff.sort_values("error")
 
+        dff["title"] = dff[["title", "url"]].apply(
+            lambda x: f"[{x[0]}]({x[1]})", axis=1
+        )
         dff = dff[cols]
 
         return (
