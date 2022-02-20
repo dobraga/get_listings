@@ -37,6 +37,9 @@ layout = DataTable(
 
 
 def init_app(app: Dash) -> Dash:
+    cols = ["url", "usable_area", "type_unit", "estacao"]
+    cols += ["distance", "total_fee", "total_fee_predict"]
+
     @app.callback(
         Output("table", "data"),
         Output("table", "page_count"),
@@ -64,6 +67,8 @@ def init_app(app: Dash) -> Dash:
             )
         else:
             dff = dff.sort_values("error")
+
+        dff = dff[cols]
 
         return (
             dff.iloc[page_current * page_size : (page_current + 1) * page_size].to_dict(
