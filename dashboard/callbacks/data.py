@@ -5,7 +5,7 @@ from dash.exceptions import PreventUpdate
 from dash.dependencies import Input, Output, State
 
 
-from backend import metro, location, get_listings
+from backend import location, get_listings
 from dashboard.utils import depara_tp_contrato, depara_tp_listings
 
 
@@ -73,8 +73,7 @@ def init_app(app: Dash) -> Dash:
             **selected_location,
             business_type=business_type,
             listing_type=listing_type,
-            df_metro=metro.get_metro(selected_location["stateAcronym"], app.server.db),
-            db=app.server.db,
+            db=app.server.db
         )
 
         return (
