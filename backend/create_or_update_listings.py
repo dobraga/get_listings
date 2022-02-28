@@ -27,7 +27,7 @@ def create_or_update_listings(
     force_update = settings.get("FORCE_UPDATE", False)
     df_metro = get_metro(stateAcronym.lower(), db)
 
-    with timeit(message, log, "info"):
+    with timeit(message, log):
         bd.clean_imoveis_ativos(db, listing_type, business_type, locationId)
 
         with ProcessPoolExecutor() as executor:
@@ -61,7 +61,7 @@ def create_or_update_listings(
                             or parsed.updated_date is None
                             or imovel.updated_date.date() != parsed.updated_date.date()
                         ):
-                            with timeit(f"Update {url}", log):
+                            with timeit(f"Update {url}", log, "debug"):
                                 imovel.raw = parsed.raw
                                 imovel.title = parsed.title
                                 imovel.usable_area = parsed.usable_area
@@ -89,7 +89,7 @@ def create_or_update_listings(
                             log.debug(f"not updated {url}")
 
                     else:
-                        with timeit(f"creating {url}", log):
+                        with timeit(f"creating {url}", log, "debug"):
                             db.session.add(parsed)
                             db.session.commit()
 

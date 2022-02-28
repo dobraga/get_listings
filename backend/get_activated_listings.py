@@ -16,7 +16,6 @@ def get_activated_listings(db, locationId, business_type, listing_type):
     with timeit(
         f"busca dos dados atualizados {listing_type=} {business_type=} {locationId=}",
         log,
-        "info",
     ):
         with db.engine.connect() as c:
             imoveis = c.execute(

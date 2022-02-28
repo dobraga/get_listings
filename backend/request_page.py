@@ -28,7 +28,7 @@ def request_page(
     Request all pages for one site
     """
 
-    with timeit(f"Busca dados do {origin}", log, "info"):
+    with timeit(f"Busca dados do {origin}", log):
         max_page = max_page or settings["max_page"]
         api = settings["sites"][origin]["api"]
         site = settings["sites"][origin]["site"]
@@ -92,7 +92,7 @@ def request_page(
             data = []
             for page in range(1, max_page + 1):
                 with timeit(
-                    f"Getting page {page}/{max_page} from {portal} OK", log, "info"
+                    f"Getting page {page}/{max_page} from {portal} OK", log, "debug"
                 ):
                     try:
                         query["from"] = page * query["size"]

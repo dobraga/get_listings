@@ -19,7 +19,7 @@ def onehot(values: pd.Series, options: list, prefix: str = None) -> pd.Series:
 
 
 def preprocess(df: pd.DataFrame) -> tuple:
-    with timeit("Preprocessamento", log, "info"):
+    with timeit("Preprocessamento", log):
         df = df.copy()
 
         df["neighborhood"] = df["neighborhood"].map(

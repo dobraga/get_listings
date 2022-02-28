@@ -6,7 +6,7 @@ log = logging.getLogger(__name__)
 
 
 class timeit:
-    def __init__(self, text, log=log, level_log="debug") -> None:
+    def __init__(self, text, log=log, level_log="info") -> None:
         self.text, self.log, self.level_log = text, log, level_log
 
     def __enter__(self):

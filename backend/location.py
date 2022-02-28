@@ -29,7 +29,7 @@ def get_keys(
 
 def list_locations(local: str, origin="zapimoveis") -> dict:
 
-    with timeit(f"Listando localizações {local=} {origin=}", log, "info"):
+    with timeit(f"Listando localizações {local=} {origin=}", log):
         api = settings["sites"][origin]["api"]
         portal = settings["sites"][origin]["portal"]
 

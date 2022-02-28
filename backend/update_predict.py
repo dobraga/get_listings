@@ -18,7 +18,7 @@ model = load(model_file)
 
 
 def update_predict(db, locationId, business_type, listing_type) -> None:
-    with timeit("Atualização da previsão de preços", log, "info"):
+    with timeit("Atualização da previsão de preços", log):
         imoveis = db.engine.execute(
             f"""
             SELECT *
