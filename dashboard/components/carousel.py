@@ -43,12 +43,11 @@ style = """
 
     .carousel-controls {
         position: absolute;
-        top: 0;
+        margin-top: 10px;
         left: 0;
         right: 0;
         z-index: 999;
         font-size: 100px;
-        line-height: 600px;
         color: #fff;
     }
 
