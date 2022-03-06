@@ -2,7 +2,7 @@ import logging
 import pandas as pd
 from datetime import datetime
 
-from backend import update_predict, get_activated_listings, extract_new_data, bd
+from backend import update_predict, get_activated_listings, extract_new_data, bd, metro
 from backend.settings import settings
 
 log = logging.getLogger(__name__)
@@ -12,11 +12,11 @@ def get_listings(
     neighborhood: str,
     locationId: str,
     state: str,
+    stateAcronym: str,
     city: str,
     zone: str,
     business_type: str,
     listing_type: str,
-    df_metro: pd.DataFrame,
     db,
     **kwargs,
 ) -> pd.DataFrame:
@@ -37,7 +37,7 @@ def get_listings(
             zone,
             business_type,
             listing_type,
-            df_metro,
+            metro.get_metro(stateAcronym.lower(), db),
             db,
             **kwargs,
         )
