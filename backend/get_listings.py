@@ -2,53 +2,48 @@ import logging
 import pandas as pd
 from datetime import datetime
 
-
+from backend import update_predict, get_activated_listings, extract_new_data, bd
 from backend.settings import settings
-from backend import create_or_update_listings, get_activated_listings, bd
-
 
 log = logging.getLogger(__name__)
 
 
 def get_listings(
-    locationId: str,
     neighborhood: str,
+    locationId: str,
     state: str,
     city: str,
-    stateAcronym: str,
     zone: str,
     business_type: str,
     listing_type: str,
+    df_metro: pd.DataFrame,
     db,
-    force=False,
     **kwargs,
 ) -> pd.DataFrame:
 
-    force_update = settings.get("FORCE_UPDATE", False) or force
+    force_update = settings.get("force_update", False)
 
-    # Para dados que já foram atualizados no dia da consulta, apenas retorna os dados
     last_update = bd.last_update(db, listing_type, business_type, locationId)
 
-    # Caso ja tenha dados atualizados do dia corrente
-    if last_update:
-        log.info(f'Última atualização em "{last_update}"')
-        if not force_update and last_update.date() == datetime.today().date():
-            return get_activated_listings.get_activated_listings(
-                db, locationId, business_type, listing_type
-            )
+    # Caso não tenha dados atualizados do dia corrente ou seja uma atualização forçada
+    if force_update or not last_update or last_update.date() != datetime.today().date():
+        extract_new_data.extract_new_data(
+            last_update,
+            force_update,
+            neighborhood,
+            locationId,
+            state,
+            city,
+            zone,
+            business_type,
+            listing_type,
+            df_metro,
+            db,
+            **kwargs,
+        )
 
-    create_or_update_listings.create_or_update_listings(
-        locationId,
-        neighborhood,
-        state,
-        stateAcronym,
-        city,
-        zone,
-        business_type,
-        listing_type,
-        db,
-    )
+        update_predict.update_predict(db, locationId, business_type, listing_type)
 
     return get_activated_listings.get_activated_listings(
-        db, locationId, business_type, listing_type
+        db.engine, locationId, business_type, listing_type
     )

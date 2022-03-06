@@ -86,10 +86,10 @@ if __name__ == "__main__":
     client = MlflowClient()
     experiment_name = "opt_rmse"
 
-    try:
-        experiment = client.create_experiment(experiment_name)
-    except:
-        experiment = client.get_experiment_by_name(experiment_name).experiment_id
+    # try:
+    experiment = client.create_experiment(experiment_name)
+    # except:
+    # experiment = client.get_experiment_by_name(experiment_name).experiment_id
 
     study_run = client.create_run(experiment_id=experiment)
     study_run_id = study_run.info.run_id
@@ -98,115 +98,115 @@ if __name__ == "__main__":
     # Configura Optuna #
     ####################
 
-    def get_objective(parent_run_id):
-        # get an objective function for optuna that creates nested MLFlow runs
+    # def get_objective(parent_run_id):
+    #     # get an objective function for optuna that creates nested MLFlow runs
 
-        def objective(trial):
-            trial_run = client.create_run(
-                experiment_id=experiment, tags={MLFLOW_PARENT_RUN_ID: parent_run_id}
-            )
+    #     def objective(trial):
+    #         trial_run = client.create_run(
+    #             experiment_id=experiment, tags={MLFLOW_PARENT_RUN_ID: parent_run_id}
+    #         )
 
-            name_model = trial.suggest_categorical(
-                "model",
-                [
-                    "LGBMRegressor",
-                    "XGBRegressor",
-                    "RandomForestRegressor",
-                    "ExtraTreesRegressor",
-                ],
-            )
+    #         name_model = trial.suggest_categorical(
+    #             "model",
+    #             [
+    #                 "LGBMRegressor",
+    #                 "XGBRegressor",
+    #                 "RandomForestRegressor",
+    #                 "ExtraTreesRegressor",
+    #             ],
+    #         )
 
-            if name_model == "ExtraTreesRegressor":
-                param = {
-                    "random_state": 20,
-                    "n_estimators": trial.suggest_int("n_estimators", 10, 500),
-                    "max_depth": trial.suggest_int("max_depth", 1, 10),
-                    "max_features": trial.suggest_categorical(
-                        "max_features", ["auto", "sqrt", "log2"]
-                    ),
-                    "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 10),
-                    "min_samples_split": trial.suggest_int("min_samples_split", 2, 10),
-                    "criterion": trial.suggest_categorical("criterion", ["mse", "mae"]),
-                    "bootstrap": trial.suggest_categorical("bootstrap", [True, False]),
-                }
+    #         if name_model == "ExtraTreesRegressor":
+    #             param = {
+    #                 "random_state": 20,
+    #                 "n_estimators": trial.suggest_int("n_estimators", 10, 500),
+    #                 "max_depth": trial.suggest_int("max_depth", 1, 10),
+    #                 "max_features": trial.suggest_categorical(
+    #                     "max_features", ["auto", "sqrt", "log2"]
+    #                 ),
+    #                 "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 10),
+    #                 "min_samples_split": trial.suggest_int("min_samples_split", 2, 10),
+    #                 "criterion": trial.suggest_categorical("criterion", ["mse", "mae"]),
+    #                 "bootstrap": trial.suggest_categorical("bootstrap", [True, False]),
+    #             }
 
-            elif name_model == "RandomForestRegressor":
-                param = {
-                    "random_state": 20,
-                    "n_estimators": trial.suggest_int("n_estimators", 10, 500),
-                    "max_depth": trial.suggest_int("max_depth", 1, 10),
-                    "max_features": trial.suggest_categorical(
-                        "max_features", ["auto", "sqrt", "log2"]
-                    ),
-                    "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 10),
-                    "min_samples_split": trial.suggest_int("min_samples_split", 2, 10),
-                    "criterion": trial.suggest_categorical("criterion", ["mse", "mae"]),
-                    "bootstrap": trial.suggest_categorical("bootstrap", [True, False]),
-                }
+    #         elif name_model == "RandomForestRegressor":
+    #             param = {
+    #                 "random_state": 20,
+    #                 "n_estimators": trial.suggest_int("n_estimators", 10, 500),
+    #                 "max_depth": trial.suggest_int("max_depth", 1, 10),
+    #                 "max_features": trial.suggest_categorical(
+    #                     "max_features", ["auto", "sqrt", "log2"]
+    #                 ),
+    #                 "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 10),
+    #                 "min_samples_split": trial.suggest_int("min_samples_split", 2, 10),
+    #                 "criterion": trial.suggest_categorical("criterion", ["mse", "mae"]),
+    #                 "bootstrap": trial.suggest_categorical("bootstrap", [True, False]),
+    #             }
 
-            elif name_model == "LGBMRegressor":
-                param = {
-                    "random_state": 20,
-                    "n_estimators": trial.suggest_int("n_estimators", 10, 500),
-                    "max_depth": trial.suggest_int("max_depth", 1, 10),
-                    "colsample_bytree": trial.suggest_float(
-                        "colsample_bytree", 0.1, 0.9
-                    ),
-                    "subsample": trial.suggest_float("subsample", 0.6, 1.0),
-                    "num_leaves": trial.suggest_int("num_leaves", 2, 90),
-                    "min_split_gain": trial.suggest_float("min_split_gain", 0.001, 0.1),
-                    "reg_alpha": trial.suggest_float("reg_alpha", 0, 1),
-                    "reg_lambda": trial.suggest_float("reg_lambda", 0, 1),
-                    "min_child_weight": trial.suggest_int("min_child_weight", 5, 50),
-                    "learning_rate": trial.suggest_float("learning_rate", 1e-5, 5e-1),
-                }
+    #         elif name_model == "LGBMRegressor":
+    #             param = {
+    #                 "random_state": 20,
+    #                 "n_estimators": trial.suggest_int("n_estimators", 10, 500),
+    #                 "max_depth": trial.suggest_int("max_depth", 1, 10),
+    #                 "colsample_bytree": trial.suggest_float(
+    #                     "colsample_bytree", 0.1, 0.9
+    #                 ),
+    #                 "subsample": trial.suggest_float("subsample", 0.6, 1.0),
+    #                 "num_leaves": trial.suggest_int("num_leaves", 2, 90),
+    #                 "min_split_gain": trial.suggest_float("min_split_gain", 0.001, 0.1),
+    #                 "reg_alpha": trial.suggest_float("reg_alpha", 0, 1),
+    #                 "reg_lambda": trial.suggest_float("reg_lambda", 0, 1),
+    #                 "min_child_weight": trial.suggest_int("min_child_weight", 5, 50),
+    #                 "learning_rate": trial.suggest_float("learning_rate", 1e-5, 5e-1),
+    #             }
 
-            elif name_model == "XGBRegressor":
-                param = {
-                    "random_state": 20,
-                    "n_estimators": trial.suggest_int("n_estimators", 10, 500),
-                    "max_depth": trial.suggest_int("max_depth", 1, 10),
-                    "colsample_bytree": trial.suggest_float(
-                        "colsample_bytree", 0.1, 0.9
-                    ),
-                    "subsample": trial.suggest_float("subsample", 0.6, 1.0),
-                    "reg_alpha": trial.suggest_float("reg_alpha", 0, 1),
-                    "reg_lambda": trial.suggest_float("reg_lambda", 0, 1),
-                    "min_child_weight": trial.suggest_int("min_child_weight", 5, 50),
-                    "learning_rate": trial.suggest_float("learning_rate", 1e-5, 5e-1),
-                }
+    #         elif name_model == "XGBRegressor":
+    #             param = {
+    #                 "random_state": 20,
+    #                 "n_estimators": trial.suggest_int("n_estimators", 10, 500),
+    #                 "max_depth": trial.suggest_int("max_depth", 1, 10),
+    #                 "colsample_bytree": trial.suggest_float(
+    #                     "colsample_bytree", 0.1, 0.9
+    #                 ),
+    #                 "subsample": trial.suggest_float("subsample", 0.6, 1.0),
+    #                 "reg_alpha": trial.suggest_float("reg_alpha", 0, 1),
+    #                 "reg_lambda": trial.suggest_float("reg_lambda", 0, 1),
+    #                 "min_child_weight": trial.suggest_int("min_child_weight", 5, 50),
+    #                 "learning_rate": trial.suggest_float("learning_rate", 1e-5, 5e-1),
+    #             }
 
-            transformer_x = trial.suggest_categorical("transformer_x", [True, False])
-            transformer_y = trial.suggest_categorical("transformer_y", [True, False])
+    #         transformer_x = trial.suggest_categorical("transformer_x", [True, False])
+    #         transformer_y = trial.suggest_categorical("transformer_y", [True, False])
 
-            model = create_model(name_model, transformer_x, transformer_y, **param)
+    #         model = create_model(name_model, transformer_x, transformer_y, **param)
 
-            # Log dos parâmetros
-            client.log_param(trial_run.info.run_id, "model", name_model)
-            client.log_param(trial_run.info.run_id, "transformer_x", transformer_x)
-            client.log_param(trial_run.info.run_id, "transformer_y", transformer_y)
-            [client.log_param(trial_run.info.run_id, k, v) for k, v in param.items()]
+    #         # Log dos parâmetros
+    #         client.log_param(trial_run.info.run_id, "model", name_model)
+    #         client.log_param(trial_run.info.run_id, "transformer_x", transformer_x)
+    #         client.log_param(trial_run.info.run_id, "transformer_y", transformer_y)
+    #         [client.log_param(trial_run.info.run_id, k, v) for k, v in param.items()]
 
-            # Realiza validação cruzada e faz log da métricas
-            metrics = cross_validate(
-                model, X.fillna(-1), y, cv=5, scoring=scorer, n_jobs=-1
-            )
+    #         # Realiza validação cruzada e faz log da métricas
+    #         metrics = cross_validate(
+    #             model, X.fillna(-1), y, cv=5, scoring=scorer, n_jobs=-1
+    #         )
 
-            for metric_name, metric_values in metrics.items():
-                [
-                    client.log_metric(trial_run.info.run_id, metric_name, m)
-                    for m in metric_values
-                ]
+    #         for metric_name, metric_values in metrics.items():
+    #             [
+    #                 client.log_metric(trial_run.info.run_id, metric_name, m)
+    #                 for m in metric_values
+    #             ]
 
-            return np.median(metrics["test_rmse"])
+    #         return np.median(metrics["test_rmse"])
 
-        return objective
+    #     return objective
 
-    study = optuna.create_study(
-        study_name="optuna_opt",
-        direction="minimize",
-        load_if_exists=True,
-        storage="sqlite:///data/opt_rmse.db",
-    )
+    # study = optuna.create_study(
+    #     study_name="optuna_opt",
+    #     direction="minimize",
+    #     load_if_exists=True,
+    #     storage="sqlite:///data/opt_rmse.db",
+    # )
 
-    study.optimize(get_objective(study_run_id), n_trials=1000)
+    # study.optimize(get_objective(study_run_id), n_trials=1000)

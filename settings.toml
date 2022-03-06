@@ -4,33 +4,30 @@ FLASK_ENV = '@jinja {{env.FLASK_ENV}}'
 FLASK_DEBUG = '@jinja {{env.FLASK_DEBUG}}'
 PORT = '@jinja {{env.PORT}}'
 SQLALCHEMY_TRACK_MODIFICATIONS = false
-SQLALCHEMY_DATABASE_URI  = '@jinja postgresql://{{env.POSTGRES_USER}}:{{env.POSTGRES_PASSWORD}}@{{env.POSTGRES_HOST}}:{{env.POSTGRES_PORT}}/{{env.POSTGRES_DB}}'
+SQLALCHEMY_DATABASE_URI = '@jinja postgresql://{{env.POSTGRES_USER}}:{{env.POSTGRES_PASSWORD}}@{{env.POSTGRES_HOST}}:{{env.POSTGRES_PORT}}/{{env.POSTGRES_DB}}'
 
 [default.metro_trem]
 [default.metro_trem.rj]
-    urls = [
-        "https://pt.wikipedia.org/wiki/Metr%C3%B4_do_Rio_de_Janeiro",
-        "https://pt.wikipedia.org/wiki/SuperVia",
-    ]
+urls = [
+  "https://pt.wikipedia.org/wiki/Metr%C3%B4_do_Rio_de_Janeiro",
+  "https://pt.wikipedia.org/wiki/SuperVia",
+]
 
 [default.metro_trem.sp]
-    urls = [
-        "https://pt.wikipedia.org/wiki/Metr%C3%B4_de_S%C3%A3o_Paulo",
-    ]
+urls = ["https://pt.wikipedia.org/wiki/Metr%C3%B4_de_S%C3%A3o_Paulo"]
 
 [default.sites]
-    [default.sites.vivareal]
-        site = "https://www.vivareal.com.br"
-        api = "glue-api.vivareal.com"
-        portal = "VIVAREAL"
-        sleep = 0.2
+[default.sites.vivareal]
+site = "https://www.vivareal.com.br"
+api = "glue-api.vivareal.com"
+portal = "VIVAREAL"
+sleep = 0.2
 
-    [default.sites.zapimoveis]
-        site = "https://www.zapimoveis.com.br"
-        api = "glue-api.zapimoveis.com.br"
-        portal = "ZAP"
-        sleep = 0.2
-
+[default.sites.zapimoveis]
+site = "https://www.zapimoveis.com.br"
+api = "glue-api.zapimoveis.com.br"
+portal = "ZAP"
+sleep = 0.2
 
 
 [development]
