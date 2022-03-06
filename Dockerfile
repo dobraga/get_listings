@@ -11,7 +11,7 @@ RUN apt-get update && \
     locales \
     locales-all
 
-COPY ./production.env /app/.env
+COPY ./.env /app/.env
 COPY ./backend /app/backend
 COPY ./dashboard /app/dashboard
 COPY ./requirements.txt /app/

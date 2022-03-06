@@ -23,6 +23,7 @@ dash-bootstrap-components = "1.*"
 dash-table = "5.*"
 lightgbm = "3.*"
 toml = "0.*"
+dynaconf = "3.*"
 
 [tool.poetry.dev-dependencies]
 mypy = "*"
@@ -37,7 +38,7 @@ mlflow = "1.*"
 xgboost = "1.*"
 types-requests = "*"
 pytest = "*"
-types-toml = "^0.10.3"
+types-toml = "*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

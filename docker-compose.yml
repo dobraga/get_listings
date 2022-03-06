@@ -4,7 +4,7 @@ services:
         build: .
         restart: always
         env_file: 
-            - ./production.env
+            - ./.env
         ports:
             - ${PORT}:${PORT}
         networks:
@@ -16,7 +16,7 @@ services:
         image: postgres
         restart: always
         env_file: 
-            - ./production.env
+            - ./.env
         ports:
             - "15432:5432"
         volumes:
