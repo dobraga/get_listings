@@ -1,17 +1,12 @@
-from modeling.data import get_data
-
-
-try:
-    import optuna
-    import xgboost as xgb
-    import lightgbm as lgb
-    from mlflow.tracking import MlflowClient
-    from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID
-except ImportError:
-    raise Exception("Esses pacotes estão presenter apenas no desenvolvimento")
-
+import optuna
 import logging
 import numpy as np
+import pandas as pd
+import xgboost as xgb
+import lightgbm as lgb
+from sqlalchemy import create_engine
+from mlflow.tracking import MlflowClient
+from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import cross_validate
@@ -24,9 +19,23 @@ from sklearn.metrics import (
     mean_absolute_percentage_error as mape,
 )
 
+from backend.settings import settings
+from backend.preprocess import preprocess
+
+engine = create_engine(settings.SQLALCHEMY_DATABASE_URI)
 log = logging.getLogger(__name__)
 
-X, y = get_data()
+df = pd.read_sql(
+    """
+        select url, neighborhood, usable_area, floors, type_unit, bedrooms, bathrooms, suites, parking_spaces,
+        amenities, address_lat, address_lon, total_fee, estacao, distance, created_date, updated_date
+        from imovel
+    """,
+    engine,
+)
+log.info("Data read finished")
+X, y = preprocess(df)
+log.info("Preprocess data finished")
 
 
 def create_model(model, transformer_x, transformer_y, **kwargs):
