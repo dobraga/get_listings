@@ -17,9 +17,7 @@ db: ## Sobe banco de dados
 	docker-compose up --build db
 
 dash: ## Executa dashboard
-	poetry shell
-	python dashboard.py
-
+	poetry run python dashboard.py
 
 clear-mlflow: ## Limpa diretórios do MLFlow
 	rm -rf mlruns
@@ -28,8 +26,7 @@ clear-mlflow: ## Limpa diretórios do MLFlow
 	rm -rf utils/model/opt
 
 mlflow: ## Sobe MLFlow na porta 5050
-	poetry shell
-	mlflow server --backend-store-uri sqlite:///mlflow_data.db --default-artifact-root artifacts -p 5050 --gunicorn-opts "--timeout 0"
+	poetry run mlflow server --backend-store-uri sqlite:///mlflow_data.db --default-artifact-root artifacts -p 5050 --gunicorn-opts "--timeout 0"
 
 export_req: ## Exporta dependências para requirements.txt
 	poetry export -o requirements.txt
@@ -42,8 +39,7 @@ clear: ## Limpa notebooks e python
 	find . | grep -E "__pycache__" | xargs rm -rf
 
 test: ## Executa os testes
-	poetry shell
-	pytest -v -x
+	poetry run pytest -v -x
 
 heroku-deploy: ## Deploy no heroku
 	# heroku addons:create heroku-postgresql:hobby-dev -a $(HEROKU_NAME) # Adiciona o postgresql
