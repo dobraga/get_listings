@@ -28,6 +28,7 @@ def test_get_listings():
         "medias",
         "accountLink",
         "link",
+        "site",
         "neighborhood",
         "locationId",
         "state",
@@ -36,7 +37,6 @@ def test_get_listings():
         "business_type",
         "listing_type",
         "origin",
-        "url",
     ]
 
     assert list(imoveis_vivareal[0]["listing"].keys()) == [
