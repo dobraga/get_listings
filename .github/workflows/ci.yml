@@ -1,0 +1,28 @@
+name: Testes da aplicação
+on:
+  push:
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  executa_testes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Realiza o checkout
+        uses: actions/checkout@v3
+
+      - name: Instala o python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Instala o poetry
+        uses: Gr1N/setup-poetry@v7
+
+      - name: Instala dependências
+        run: poetry install
+
+      - name: Executa os testes
+        run: poetry run pytest -v -x
