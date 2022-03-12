@@ -4,7 +4,6 @@ FLASK_ENV = '@jinja {{env.FLASK_ENV}}'
 FLASK_DEBUG = '@jinja {{env.FLASK_DEBUG}}'
 PORT = '@jinja {{env.PORT}}'
 SQLALCHEMY_TRACK_MODIFICATIONS = false
-SQLALCHEMY_DATABASE_URI = '@jinja postgresql://{{env.POSTGRES_USER}}:{{env.POSTGRES_PASSWORD}}@{{env.POSTGRES_HOST}}:{{env.POSTGRES_PORT}}/{{env.POSTGRES_DB}}'
 
 [default.metro_trem]
 [default.metro_trem.rj]
@@ -34,8 +33,10 @@ sleep = 0.2
 DEBUG = true
 max_page = 1
 force_update = true
+SQLALCHEMY_DATABASE_URI = '@jinja postgresql://{{env.POSTGRES_USER}}:{{env.POSTGRES_PASSWORD}}@localhost:15432/{{env.POSTGRES_DB}}'
 
 [production]
 DEBUG = false
 max_page = 50
 force_update = false
+SQLALCHEMY_DATABASE_URI = '@jinja postgresql://{{env.POSTGRES_USER}}:{{env.POSTGRES_PASSWORD}}@db:5432/{{env.POSTGRES_DB}}'
