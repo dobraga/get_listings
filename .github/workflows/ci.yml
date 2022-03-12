@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Instala locales
-        run: sudo apt install locales locales-all -y
+        run: sudo apt update && sudo apt install locales locales-all -y
 
       - name: Realiza o checkout
         uses: actions/checkout@v3
