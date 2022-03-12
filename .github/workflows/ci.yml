@@ -10,6 +10,9 @@ jobs:
   executa_testes:
     runs-on: ubuntu-latest
     steps:
+      - name: Instala locales
+        uses: sudo apt install locales locales-all -y
+
       - name: Realiza o checkout
         uses: actions/checkout@v3
 
